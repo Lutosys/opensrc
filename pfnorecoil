@@ -1,0 +1,39 @@
+repeat wait(1) until game.Loaded
+
+print("script has been executed")
+
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local lplr = Players.LocalPlayer
+
+if not getfflag or not setfflag or not hookfunction then
+    return lplr:Kick("Unsupported Executor")
+end
+
+local placeID = game.PlaceId
+local gameID = game.JobId
+
+local keeping = false
+
+if getfflag("DebugRunParallelLuaOnMainThread") == false then
+    setfflag("DebugRunParallelLuaOnMainThread", true)
+    keeping = true
+    lplr:Kick("Changed FFLAG rejoining the game!")
+    TeleportService.TeleportToPlaceInstance(placeID, gameID, lplr)
+end
+
+lplr.OnTeleport:Connect(function()
+    if keeping then
+        queue_on_teleport("illputloadstringlater")
+    end
+end)
+
+for i,v in pairs(getgc(true)) do
+    if type(v) == "table" and rawget(v, "applyImpulse") then
+        hookfunction(rawget(v, "applyImpulse"), function()
+            return
+        end)
+        print("function has been hooked")
+        break
+    end
+end
