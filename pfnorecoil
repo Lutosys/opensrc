@@ -24,7 +24,7 @@ end
 
 lplr.OnTeleport:Connect(function()
     if keeping then
-        queue_on_teleport("illputloadstringlater")
+        queue_on_teleport("loadstring(game:HttpGet("https://raw.githubusercontent.com/Lutosys/opensrc/refs/heads/main/pfnorecoil"))()")
     end
 end)
 
