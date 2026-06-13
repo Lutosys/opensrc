@@ -19,13 +19,13 @@ if getfflag("DebugRunParallelLuaOnMainThread") == false then
     setfflag("DebugRunParallelLuaOnMainThread", true)
     keeping = true
     lplr:Kick("Changed FFLAG rejoining the game!")
-    TeleportService.TeleportToPlaceInstance(placeID, gameID, lplr)
+    TeleportService:TeleportToPlaceInstance(placeID, gameID, lplr)
 end
 
 lplr.OnTeleport:Connect(function()
     if keeping then
-        queue_on_teleport("loadstring(game:HttpGet("https://raw.githubusercontent.com/Lutosys/opensrc/refs/heads/main/pfnorecoil"))()")
-    end
+        queue_on_teleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/Lutosys/opensrc/refs/heads/main/pfnorecoil'))()") 
+   end
 end)
 
 for i,v in pairs(getgc(true)) do
