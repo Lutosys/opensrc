@@ -17,7 +17,7 @@ local gameID = game.JobId
 
 if queue_teleport then
     lplr.OnTeleport:Connect(function()
-        queue_teleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/Lutosys/opensrc/refs/heads/main/pfnorecoil'))()") 
+        queue_teleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/Lutosys/opensrc/refs/heads/main/pfnorecoil.lua'))()") 
     end)
 end
 
