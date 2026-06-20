@@ -355,6 +355,11 @@ local function getBestPlant()
 end
 
 local function performSteal(model)
+    if not isNightTime() then
+        warn("Only execute when its night")
+        return 
+    end
+
     if not model then
         warn("There are no stealable plants")
         return
@@ -408,7 +413,7 @@ local function performSteal(model)
 
     teleportto(hrp, oldPos, target, 30)
 
-    task.wait(0.5)
+    task.wait(1)
 
     if NetworkModule and NetworkModule.Steal then
         if NetworkModule.Steal.BeginSteal then
@@ -423,7 +428,7 @@ local function performSteal(model)
         return
     end
 
-    task.wait(0.5)
+    task.wait(1)
 
     teleportto(hrp, target, oldPos, 30)
 end
@@ -439,5 +444,5 @@ local success, err = pcall(function()
 end)
 
 if not success then
-    warn("Failed with error: " .. tostring(err))
+    warn("failed: " .. tostring(err))
 end
