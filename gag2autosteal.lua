@@ -158,22 +158,32 @@ local function teleportto(hrp, startCFrame, targetCFrame, speed)
         return
     end
 
-    if not speed or typeof(speed) ~= "number" then
-        warn("SPEED: You passed something that isnt a number")
+    if not speed or typeof(speed) ~= "number" or speed <= 0 then
+        warn("SPEED: You passed something that isnt a valid number")
         return
     end
 
     local distance = (targetCFrame.Position - startCFrame.Position).Magnitude
+    local duration = distance / speed
     local con
     local elp = 0
 
     pcall(function()
         con = RunService.RenderStepped:Connect(function(dt)
             pcall(function()
-                elp = elp + dt 
+                elp = elp + dt
+                
+                if elp >= duration then
+                    if hrp and hrp.Parent ~= nil then
+                        hrp.CFrame = targetCFrame
+                    end
+                    if con then
+                        con:Disconnect()
+                    end
+                    return
+                end
 
-                local duration = (distance > 0) and (distance / speed) or 0
-                local alpha = math.clamp(elp / duration, 0, 1)
+                local alpha = elp / duration
 
                 if hrp and hrp.Parent ~= nil then
                     hrp.CFrame = startCFrame:Lerp(targetCFrame, alpha)
@@ -183,12 +193,6 @@ local function teleportto(hrp, startCFrame, targetCFrame, speed)
                         con:Disconnect()
                     end
                     return
-                end
-
-                if alpha >= 1 then
-                    if con then
-                        con:Disconnect()
-                    end
                 end
             end)
         end)
@@ -200,7 +204,7 @@ local function teleportto(hrp, startCFrame, targetCFrame, speed)
     end
 
     local waitStart = tick()
-    while con.Connected and tick() - waitStart < 10 do
+    while con.Connected and tick() - waitStart < duration + 2 do
         task.wait()
     end
 
