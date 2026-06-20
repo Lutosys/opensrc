@@ -415,7 +415,7 @@ local function performSteal(model)
     
     local target = basePart.CFrame + Vector3.new(0, 3, 0)
 
-    teleportto(hrp, oldPos, target, 30)
+    teleportto(hrp, oldPos, target, 33.8)
 
     task.wait(1)
 
@@ -428,13 +428,13 @@ local function performSteal(model)
         end
     else
         warn("Network module not properly loaded")
-        teleportto(hrp, target, oldPos, 30)
+        teleportto(hrp, target, oldPos, 33.8)
         return
     end
 
     task.wait(1)
 
-    teleportto(hrp, target, oldPos, 30)
+    teleportto(hrp, target, oldPos, 33.8)
 end
 
 local success, err = pcall(function()
