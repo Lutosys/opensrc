@@ -1,15 +1,12 @@
 local castBullet = filtergc("function", {Name = "castBullet"})
 
 local function isOnSameTeam(player)
-    local myData = game:GetService("ReplicatedStorage"):FindFirstChild("MatchData")
-    if not myData then return false end
-
     local localPlayer = game.Players.LocalPlayer
+    
     local myTeam = localPlayer:GetAttribute("DuelsTeam")
     local theirTeam = player:GetAttribute("DuelsTeam")
-
-    if myTeam and theirTeam then
-        return myTeam == theirTeam
+    if myTeam and theirTeam and myTeam == theirTeam then
+        return true
     end
 
     return false
@@ -27,9 +24,13 @@ local function GetClosestPlayer()
         if not char then continue end
         local hrp = char:FindFirstChild("HumanoidRootPart")
         if not hrp then continue end
+        local hum = char:FindFirstChild("Humanoid")
+        if not hum or hum.Health <= 0 then continue end
+
         if isOnSameTeam(v) then
             continue
         end 
+
         local head = char:FindFirstChild("Head")
         if not head then continue end
         local screenPos, onScreen = camera:WorldToViewportPoint(hrp.Position)
@@ -37,7 +38,7 @@ local function GetClosestPlayer()
             local distance = (Vector2.new(screenPos.X, screenPos.Y) - camera.ViewportSize / 2).Magnitude
             if distance < closestDistance then
                 closestDistance = distance
-                closest = hrp
+                closest = head
             end
         end
     end
