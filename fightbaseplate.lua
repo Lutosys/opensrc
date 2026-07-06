@@ -157,3 +157,15 @@ for _, v in pairs(getgc()) do
         end)
     end
 end
+
+game:GetService("RunService").Stepped:Connect(function()
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer and player.Character then
+            for _, v in pairs(player.Character:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = false
+                end
+            end
+        end
+    end
+end)
