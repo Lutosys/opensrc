@@ -1,7 +1,3 @@
--- credits to phemonaz for the wallbang method :)
-
-local tryFire = filtergc("function", {Name = "tryFire"})
-
 local function isOnSameTeam(player)
     local localPlayer = game.Players.LocalPlayer
     
@@ -52,27 +48,27 @@ game:GetService("RunService").RenderStepped:Connect(function()
     target = GetClosestPlayer()
 end)
 
+local castBullet = nil
+local params = {}
 local function startSlientAim()
-    tryFire = filtergc("function", {Name = "tryFire"})
-    local old = debug.getupvalue(tryFire[1], 21)
-    debug.setupvalue(tryFire[1],21, function(spread, origin)
-        if target then
-            return{
-                Position = target.Position,
-                Normal = Vector3.new(0,1,0),
-                Distance = 1,
-                Instance = target
-            }
-        end 
-        return old(spread, origin)
-    end)
+    castBullet = filtergc("function", {Name = "castBullet"})
+    params = debug.getupvalue(castBullet[1], 4)
+    for _, f in next, castBullet do
+        local old
+        old = hookfunction(f, function(p1,p2)
+            if target then
+                return workspace:Raycast(p2, (target.Position - p2), params)
+            end
+            return old(p1,p2)
+        end)
+    end
 end
 
 startSlientAim()
 
 game.Players.LocalPlayer.CharacterAdded:Connect(function(c)
     if c.Parent then
-        wait(1)
+        wait(2)
         startSlientAim()
     end
 end)
