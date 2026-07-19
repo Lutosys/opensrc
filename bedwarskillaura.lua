@@ -1,6 +1,7 @@
 local InventoryHandler = require(game:GetService("ReplicatedStorage").TS.inventory["inventory-util"])
 local InventoryUtil = InventoryHandler.InventoryUtil
 local SwordEvent = game:GetService("ReplicatedStorage").rbxts_include.node_modules["@rbxts"].net.out._NetManaged.SwordHit
+local BedwarsMelees = require(ReplicatedStorage.TS.games.bedwars["bedwars-melees"]).BedwarsMelees
 
 local function getHandTool()
     local success, result = pcall(function()
@@ -11,6 +12,17 @@ local function getHandTool()
     end 
     return nil
 end 
+
+local function getHandType()
+    local success, result = pcall(function()
+        return InventoryUtil.getInventory(game.Players.LocalPlayer).hand.itemType
+    end)
+    if success and result then  
+        return result
+    end 
+    return nil
+end 
+
 
 local function getLocalRoot()
     local success, result = pcall(function()
@@ -59,35 +71,34 @@ local function swordattack(target)
         local tool = getHandTool()
         if not tool then return end
         
-        local name = tool.Name
-        if not name or not name:lower():match("sword") then 
-            warn(name .. " is not a valid KA tool")
-            return 
-        end
+        local handtype = getHandType()
+        if not handtype then return end
 
-        local myRoot = getLocalRoot()
-        if not myRoot then return end
+        if table.find(BedwarsMelees, handtype) then
+            local myRoot = getLocalRoot()
+            if not myRoot then return end
 
-        local plrChar = target:FindFirstAncestorOfClass("Model")
-        if not plrChar then return end
+            local plrChar = target:FindFirstAncestorOfClass("Model")
+            if not plrChar then return end
 
-        local args = {
-            chargedAttack = {
-                chargeRatio = 0
-            },
-            entityInstance = plrChar,
-            validate = {
-                selfPosition = {
-                    value = myRoot.Position
+            local args = {
+                chargedAttack = {
+                    chargeRatio = 0
                 },
-                targetPosition = {
-                    value = target.Position
-                }
-            },
-            weapon = tool
-        }
+                entityInstance = plrChar,
+                validate = {
+                    selfPosition = {
+                        value = myRoot.Position
+                    },
+                    targetPosition = {
+                        value = target.Position
+                    }
+                },
+                weapon = tool
+            }
 
-        SwordEvent:FireServer(args)
+            SwordEvent:FireServer(args)
+        end
     end)
 end 
 
