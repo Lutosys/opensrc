@@ -1,5 +1,3 @@
-assert(hookfunction, game.Players.LocalPlayer:Kick("executor is not supported sorry"))
-
 local KnockbackVelocity = game:GetService("ReplicatedStorage").Remotes.Knockback
 
 local velocitypercent = 0
@@ -13,5 +11,3 @@ oldknockback = hookfunction(getconnections(KnockbackVelocity.OnClientEvent)[1].F
 
     return oldknockback(a1,Vector3.new(x,y,z))
 end)
-
-print("success")
