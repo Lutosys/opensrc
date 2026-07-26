@@ -1,2 +1,1 @@
-print("HBdasello")
-asd
+print("test"
