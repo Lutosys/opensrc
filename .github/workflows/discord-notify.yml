@@ -12,6 +12,8 @@ jobs:
           fetch-depth: 2
 
       - name: Send to Discord
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           FILES=$(git diff --name-status HEAD~1 HEAD)
           ADDED=$(echo "$FILES" | grep '^A' | cut -f2)
@@ -20,7 +22,7 @@ jobs:
 
           MSG="${{ github.event.head_commit.message }}"
 
-          curl -H "Content-Type: application/json" -X POST -d "$(jq -n \
+          PAYLOAD=$(jq -n \
             --arg msg "$MSG" \
             --arg added "$ADDED" \
             --arg modified "$MODIFIED" \
@@ -36,5 +38,8 @@ jobs:
                   {name: "Removed", value: ($removed | if . == "" then "None" else . end)}
                 ]
               }]
-            }')" \
-            "${{ secrets.DISCORD_WEBHOOK_URL }}"
+            }')
+
+          echo "Webhook URL length: ${#WEBHOOK_URL}"
+
+          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK_URL"
