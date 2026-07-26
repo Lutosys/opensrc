@@ -15,6 +15,12 @@ jobs:
         env:
           WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
+          # Strip any hidden whitespace/newlines from the secret
+          CLEAN_URL=$(echo "$WEBHOOK_URL" | tr -d '[:space:]')
+
+          echo "URL length: ${#CLEAN_URL}"
+          echo "URL starts with: ${CLEAN_URL:0:30}..."
+
           FILES=$(git diff --name-status HEAD~1 HEAD)
           ADDED=$(echo "$FILES" | grep '^A' | cut -f2)
           MODIFIED=$(echo "$FILES" | grep '^M' | cut -f2)
@@ -40,6 +46,4 @@ jobs:
               }]
             }')
 
-          echo "Webhook URL length: ${#WEBHOOK_URL}"
-
-          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK_URL"
+          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$CLEAN_URL"
