@@ -1,13 +1,29 @@
-- name: Discord Commit Webhook
-  # You may pin to the exact commit or the version.
-  # uses: mrrobotdotapp/classic-discord-webhook@44efb71630915f2a633f6c8624f379acb578e75b
-  uses: mrrobotdotapp/classic-discord-webhook@v2.0.1
-  with:
-    # Discord webhook ID — the first segment of the webhook URL (discord.com/api/webhooks/{ID}/{TOKEN})
-    id: 
-    # Discord webhook token — the second segment of the webhook URL
-    token: 
-    # Send the message to a specific thread inside the webhook channel (Discord thread snowflake ID)
-    threadId: # optional
-    # Override the default webhook username displayed in Discord
-    username: # optional
+name: Discord Commit Notification
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Debug Secrets
+        run: |
+          echo "ID length: ${#DISCORD_WEBHOOK_ID}"
+          echo "TOKEN length: ${#DISCORD_WEBHOOK_TOKEN}"
+        env:
+          DISCORD_WEBHOOK_ID: ${{ secrets.DISCORD_WEBHOOK_ID }}
+          DISCORD_WEBHOOK_TOKEN: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+
+      - name: Discord Commit Webhook
+        uses: mrrobotdotapp/classic-discord-webhook@v2.0.1
+        with:
+          id: ${{ secrets.DISCORD_WEBHOOK_ID }}
+          token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+          username: GitHub Notifier
