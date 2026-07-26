@@ -1,29 +1,40 @@
-name: Discord Commit Notification
-
+name: Discord Notify
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   notify:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: Debug Secrets
-        run: |
-          echo "ID length: ${#DISCORD_WEBHOOK_ID}"
-          echo "TOKEN length: ${#DISCORD_WEBHOOK_TOKEN}"
-        env:
-          DISCORD_WEBHOOK_ID: ${{ secrets.DISCORD_WEBHOOK_ID }}
-          DISCORD_WEBHOOK_TOKEN: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
-
-      - name: Discord Commit Webhook
-        uses: mrrobotdotapp/classic-discord-webhook@v2.0.1
+      - uses: actions/checkout@v3
         with:
-          id: ${{ secrets.DISCORD_WEBHOOK_ID }}
-          token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
-          username: GitHub Notifier
+          fetch-depth: 2
+
+      - name: Send to Discord
+        run: |
+          FILES=$(git diff --name-status HEAD~1 HEAD)
+          ADDED=$(echo "$FILES" | grep '^A' | cut -f2)
+          MODIFIED=$(echo "$FILES" | grep '^M' | cut -f2)
+          REMOVED=$(echo "$FILES" | grep '^D' | cut -f2)
+
+          MSG="${{ github.event.head_commit.message }}"
+
+          curl -H "Content-Type: application/json" -X POST -d "$(jq -n \
+            --arg msg "$MSG" \
+            --arg added "$ADDED" \
+            --arg modified "$MODIFIED" \
+            --arg removed "$REMOVED" \
+            '{
+              embeds: [{
+                title: "Commit Pushed",
+                color: 2829617,
+                fields: [
+                  {name: "Commit Message", value: $msg},
+                  {name: "Added", value: ($added | if . == "" then "None" else . end)},
+                  {name: "Modified", value: ($modified | if . == "" then "None" else . end)},
+                  {name: "Removed", value: ($removed | if . == "" then "None" else . end)}
+                ]
+              }]
+            }')" \
+            "${{ secrets.DISCORD_WEBHOOK_URL }}"
