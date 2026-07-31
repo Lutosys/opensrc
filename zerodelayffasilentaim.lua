@@ -1,3 +1,11 @@
+getgenv().config = getgenv().config or {
+    Enabled = true,
+    TargetPart = "Head",
+    FOV = 250,
+    Color = Color3.fromRGB(0, 255, 255),
+    Thickness = 1.5,
+}
+
 local Workspace: Workspace? = game:GetService("Workspace")
 if not Workspace then return warn("Workspace did not initialize") end 
 local Players: Players? = game:GetService("Players")
@@ -51,6 +59,15 @@ local function isVisible(target: Instance?): boolean
 end
 local UserInputService = game:GetService("UserInputService")
 
+local SilentFovCircle = Drawing.new("Circle")
+SilentFovCircle.Position = UserInputService:GetMouseLocation()
+SilentFovCircle.Radius = 70
+SilentFovCircle.Color = getgenv().config.Color
+SilentFovCircle.Filled = false
+SilentFovCircle.NumSides = 128
+SilentFovCircle.Thickness = 1
+SilentFovCircle.Visible = true
+
 local function GetClosestPlayer(): BasePart?
     local closestDistance: number = math.huge
     local closest: BasePart? = nil
@@ -67,14 +84,14 @@ local function GetClosestPlayer(): BasePart?
         local hum: Humanoid? = char:FindFirstChildOfClass("Humanoid")
         if not hum or hum.Health <= 0 then continue end
 
-        local head: BasePart? = char:FindFirstChild("Head"):: BasePart?
+        local head: BasePart? = char:FindFirstChild(getgenv().config.TargetPart or "Head"):: BasePart?
 
         if not head then continue end
         local screenPos: Vector3, onScreen: boolean = camera:WorldToViewportPoint(hrp.Position)
 
         if onScreen then
             local distance: number = (Vector2.new(screenPos.X, screenPos.Y) - UserInputService:GetMouseLocation()).Magnitude
-            if distance < closestDistance then
+            if distance <= SilentFovCircle.Radius and distance < closestDistance then
                if not isVisible(head) then continue end
                 closestDistance = distance
                 closest = head
@@ -87,13 +104,17 @@ end
 
 RunService.RenderStepped:Connect(function()
     target = GetClosestPlayer()
+    SilentFovCircle.Color = getgenv().config.Color
+    SilentFovCircle.Radius = getgenv().config.FOV
+    SilentFovCircle.Thickness = getgenv().config.Thickness
+    SilentFovCircle.Position = UserInputService:GetMouseLocation()
 end)
 
 local Cast = filtergc("function", {Name = "Cast"}, true)
 
 local old: any
 old = hookfunction(Cast, function(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12)
-    if target and target:IsA("BasePart") then  
+    if target and target:IsA("BasePart") and getgenv().config.Enabled then  
         p1 = target.Position
     end
     return old(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12)
