@@ -30,6 +30,8 @@ jobs:
 
           # Build the loadstring code block for added/modified files
           CODEBLOCK=""
+          DOWNLOAD_BUTTONS=""
+          FILE_LIST=""
           
           # Process added files
           if [ -n "$ADDED" ]; then
@@ -37,6 +39,8 @@ jobs:
               if [ -n "$file" ]; then
                 FILENAME=$(basename "$file")
                 CODEBLOCK="${CODEBLOCK}loadstring(game:HttpGet(\"https://raw.githubusercontent.com/Lutosys/opensrc/refs/heads/main/${FILENAME}\"))()\n"
+                DOWNLOAD_BUTTONS="${DOWNLOAD_BUTTONS}[📥 Download ${FILENAME}](https://raw.githubusercontent.com/Lutosys/opensrc/refs/heads/main/${FILENAME})\n"
+                FILE_LIST="${FILE_LIST}${FILENAME}\n"
               fi
             done <<< "$ADDED"
           fi
@@ -47,13 +51,21 @@ jobs:
               if [ -n "$file" ]; then
                 FILENAME=$(basename "$file")
                 CODEBLOCK="${CODEBLOCK}loadstring(game:HttpGet(\"https://raw.githubusercontent.com/Lutosys/opensrc/refs/heads/main/${FILENAME}\"))()\n"
+                DOWNLOAD_BUTTONS="${DOWNLOAD_BUTTONS}[📥 Download ${FILENAME}](https://raw.githubusercontent.com/Lutosys/opensrc/refs/heads/main/${FILENAME})\n"
+                FILE_LIST="${FILE_LIST}${FILENAME}\n"
               fi
             done <<< "$MODIFIED"
           fi
 
-          # Remove trailing newline if codeblock exists
+          # Remove trailing newlines
           if [ -n "$CODEBLOCK" ]; then
             CODEBLOCK=$(echo -e "$CODEBLOCK" | sed '/^$/d')
+          fi
+          if [ -n "$DOWNLOAD_BUTTONS" ]; then
+            DOWNLOAD_BUTTONS=$(echo -e "$DOWNLOAD_BUTTONS" | sed '/^$/d')
+          fi
+          if [ -n "$FILE_LIST" ]; then
+            FILE_LIST=$(echo -e "$FILE_LIST" | sed '/^$/d')
           fi
 
           PAYLOAD=$(jq -n \
@@ -62,6 +74,8 @@ jobs:
             --arg modified "$MODIFIED" \
             --arg removed "$REMOVED" \
             --arg codeblock "$CODEBLOCK" \
+            --arg downloads "$DOWNLOAD_BUTTONS" \
+            --arg filelist "$FILE_LIST" \
             '{
               embeds: [{
                 title: "Commit Pushed",
@@ -71,6 +85,8 @@ jobs:
                   {name: "Added", value: ($added | if . == "" then "None" else . end)},
                   {name: "Modified", value: ($modified | if . == "" then "None" else . end)},
                   {name: "Removed", value: ($removed | if . == "" then "None" else . end)},
+                  {name: "Files Changed", value: (if $filelist != "" then $filelist else "None" end), inline: true},
+                  {name: "Download", value: (if $downloads != "" then $downloads else "No files to download" end), inline: true},
                   {name: "Loadstring", value: ("```lua\n" + $codeblock + "\n```"), inline: false}
                 ]
               }]
