@@ -28,11 +28,40 @@ jobs:
 
           MSG="${{ github.event.head_commit.message }}"
 
+          # Build the loadstring code block for added/modified files
+          CODEBLOCK=""
+          
+          # Process added files
+          if [ -n "$ADDED" ]; then
+            while IFS= read -r file; do
+              if [ -n "$file" ]; then
+                FILENAME=$(basename "$file")
+                CODEBLOCK="${CODEBLOCK}loadstring(game:HttpGet(\"https://raw.githubusercontent.com/Lutosys/opensrc/refs/heads/main/${FILENAME}\"))()\n"
+              fi
+            done <<< "$ADDED"
+          fi
+          
+          # Process modified files
+          if [ -n "$MODIFIED" ]; then
+            while IFS= read -r file; do
+              if [ -n "$file" ]; then
+                FILENAME=$(basename "$file")
+                CODEBLOCK="${CODEBLOCK}loadstring(game:HttpGet(\"https://raw.githubusercontent.com/Lutosys/opensrc/refs/heads/main/${FILENAME}\"))()\n"
+              fi
+            done <<< "$MODIFIED"
+          fi
+
+          # Remove trailing newline if codeblock exists
+          if [ -n "$CODEBLOCK" ]; then
+            CODEBLOCK=$(echo -e "$CODEBLOCK" | sed '/^$/d')
+          fi
+
           PAYLOAD=$(jq -n \
             --arg msg "$MSG" \
             --arg added "$ADDED" \
             --arg modified "$MODIFIED" \
             --arg removed "$REMOVED" \
+            --arg codeblock "$CODEBLOCK" \
             '{
               embeds: [{
                 title: "Commit Pushed",
@@ -41,9 +70,15 @@ jobs:
                   {name: "Commit Message", value: $msg},
                   {name: "Added", value: ($added | if . == "" then "None" else . end)},
                   {name: "Modified", value: ($modified | if . == "" then "None" else . end)},
-                  {name: "Removed", value: ($removed | if . == "" then "None" else . end)}
+                  {name: "Removed", value: ($removed | if . == "" then "None" else . end)},
+                  {name: "Loadstring", value: ("```lua\n" + $codeblock + "\n```"), inline: false}
                 ]
               }]
             }')
 
-          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$CLEAN_URL"
+          # Only send if there's code to show
+          if [ -n "$CODEBLOCK" ]; then
+            curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$CLEAN_URL"
+          else
+            echo "No files added or modified, skipping webhook"
+          fi
