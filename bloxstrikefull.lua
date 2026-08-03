@@ -5,7 +5,7 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local charfolder = Workspace:WaitForChild("Characters", 10)
-
+local hitboxsafe = false
 local function get_t() return charfolder and charfolder:FindFirstChild("Terrorists") end
 local function get_ct() return charfolder and charfolder:FindFirstChild("Counter-Terrorists") end
 
@@ -21,13 +21,7 @@ local function get_player_team(player)
     return nil
 end
 
-if getgenv().ScriptRan == true then
-    warn("script has already been executed either rejoin or wait!")
-    return
-end
-getgenv().ScriptRan = true
-
-local repo = "https://raw.githubusercontent.com/mstudio45/LinoriaLib/main/"
+local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/"
 
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
@@ -41,19 +35,20 @@ local Window = Library:CreateWindow({
     Center = true,
     AutoShow = true,
     TabPadding = 8,
-    MenuFadeTime = 0.2
+    MenuFadeTime = 0.2,
+    Footer = "made by L10"
 })
 
 local Tabs = {
-    Combat = Window:AddTab('Combat'),
-    Visuals = Window:AddTab('Visuals'),
-    Weapons = Window:AddTab('Weapons'),
-    StyleChanger = Window:AddTab('StyleChanger'),
-    Settings = Window:AddTab('Settings'),
+    Combat = Window:AddTab('Combat', 'swords'),
+    Visuals = Window:AddTab('Visuals', 'eye'),
+    Weapons = Window:AddTab('Weapons', 'crosshair'),
+    StyleChanger = Window:AddTab('StyleChanger', 'paintbrush'),
+    Settings = Window:AddTab('Settings', 'settings'),
 }
 
-local SkinsBox = Tabs.StyleChanger:AddLeftGroupbox("Skins")
-local Skins2Box = Tabs.StyleChanger:AddRightGroupbox("Skins 2")
+local SkinsBox = Tabs.StyleChanger:AddLeftGroupbox("Skins", "palette")
+local Skins2Box = Tabs.StyleChanger:AddRightGroupbox("Skins 2", "brush")
 
 local ApplySkinTextures = nil
 
@@ -125,8 +120,8 @@ end)
 
 local HitboxList = {"HumanoidRootPart","Head","LeftLowerArm","LowerTorso","RightHand","RightLowerArm","LeftFoot","LeftHand","RightFoot","RightLowerLeg","LeftLowerLeg","RightUpperArm","LeftUpperArm","UpperTorso","RightUpperLeg","LeftUpperLeg"}
 
-local WeaponModsBox = Tabs.Weapons:AddLeftGroupbox("Weapon Mods")
-local GernadesBox = Tabs.Weapons:AddRightGroupbox("Gernades")
+local WeaponModsBox = Tabs.Weapons:AddLeftGroupbox("Weapon Mods", "wrench")
+local GernadesBox = Tabs.Weapons:AddRightGroupbox("Gernades", "bomb")
 
 GernadesBox:AddToggle("Antiflashbang", {
     Text = "Enable No Flashbang",
@@ -171,7 +166,7 @@ WeaponModsBox:AddToggle("NoSpread", {
     DisabledTooltip = "This feature is not available on your executor.",
 })
 
-local CombatLegitBox = Tabs.Combat:AddLeftGroupbox("Legit")
+local CombatLegitBox = Tabs.Combat:AddLeftGroupbox("Legit", "target")
 
 CombatLegitBox:AddToggle("Aimbot", {
     Text = "Enable Aimbot",
@@ -260,7 +255,7 @@ LegitDependencyBox2:SetupDependencies({
     {Toggles.Triggerbot, true}
 })
 
-local HitboxBox = Tabs.Combat:AddLeftGroupbox("Hitbox Expander")
+local HitboxBox = Tabs.Combat:AddLeftGroupbox("Hitbox Expander", "maximize")
 
 HitboxBox:AddToggle("Hitbox", {
     Text = "Enable Hitbox Expander",
@@ -291,9 +286,9 @@ HitboxDependencyBox:SetupDependencies({
     {Toggles.Hitbox, true}
 })
 
-local CombatBlatantBox = Tabs.Combat:AddRightGroupbox("Blatant")
+local CombatBlatantBox = Tabs.Combat:AddRightGroupbox("Blatant", "zap")
 
-local RageBlatantBox = Tabs.Combat:AddRightGroupbox("Rage")
+local RageBlatantBox = Tabs.Combat:AddRightGroupbox("Rage", "flame")
 
 CombatBlatantBox:AddToggle("SilentAim", {
     Text = "Enable Silent Aim",
@@ -416,7 +411,7 @@ RageDependencyBox:SetupDependencies({
     {Toggles.Ragebot , true}
 })
 
-local VisualsESPBox = Tabs.Visuals:AddLeftGroupbox("ESP")
+local VisualsESPBox = Tabs.Visuals:AddLeftGroupbox("ESP", "eye")
 
 VisualsESPBox:AddToggle("ESPEnabled", {
     Text = "ESP Enabled",
@@ -786,7 +781,7 @@ local function ensure_character_parts(instance, data)
     end
 
     if instance:IsA("Model") then
-        for _, p in ipairs(instance:GetDescendants()) do
+        for _, p in next, instance:GetDescendants() do
             addPart(p)
         end
         data.partConnAdd = instance.DescendantAdded:Connect(addPart)
@@ -988,9 +983,9 @@ local function cleanup_instance(instance, data)
     if data.box then
         data.box.outline:Remove()
         data.box.fill:Remove()
-        for _, line in ipairs(data.box.corner_fill) do line:Remove() end
-        for _, line in ipairs(data.box.corner_outline) do line:Remove() end
-        for _, line in ipairs(data.box.box_3d_lines) do line:Remove() end
+        for _, line in next, (data.box.corner_fill) do line:Remove() end
+        for _, line in next, (data.box.corner_outline) do line:Remove() end
+        for _, line in next, (data.box.box_3d_lines) do line:Remove() end
     end
     if data.healthbar then
         data.healthbar.outline:Remove()
@@ -1003,14 +998,14 @@ local function cleanup_instance(instance, data)
         data.tracer.fill:Remove()
     end
     if data.skeleton then
-        for _, line in ipairs(data.skeleton.lines) do line:Remove() end
+        for _, line in next, (data.skeleton.lines) do line:Remove() end
     end
     if data.headcircle then data.headcircle:Remove() end
 
     if data.partConnAdd then data.partConnAdd:Disconnect() end
     if data.partConnRemove then data.partConnRemove:Disconnect() end
     if data.sizeConns then
-        for _, conn in pairs(data.sizeConns) do
+        for _, conn in next, (data.sizeConns) do
             conn:Disconnect()
         end
     end
@@ -1042,7 +1037,7 @@ run_service.RenderStepped:Connect(function()
     local headEnabled = headCfg and headCfg.enabled
     local tracerFrom = tracerCfg.from
 
-    for instance, data in pairs(espinstances) do
+    for instance, data in next, espinstances do
         if not instance or not instance.Parent then
             cleanup_instance(instance, data)
             espinstances[instance] = nil
@@ -1321,7 +1316,7 @@ run_service.RenderStepped:Connect(function()
                 local bone_parts = data.skeleton.bone_parts
                 local lines = data.skeleton.lines
                 local screenCache = data.skeleton.screenCache
-                for k in pairs(screenCache) do screenCache[k] = nil end
+                for k in next, screenCache do screenCache[k] = nil end
 
                 for i = 1, #bone_parts do
                     local pair = bone_parts[i]
@@ -1380,7 +1375,7 @@ run_service.RenderStepped:Connect(function()
     end
 end)
 
-for k, v in pairs(espfunctions) do
+for k, v in next, espfunctions do
     esplib[k] = v
 end
 
@@ -1680,7 +1675,7 @@ RunService.RenderStepped:Connect(function()
     for _, player in next, Players:GetPlayers() do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-            if Toggles.Hitbox.Value and get_player_team(player) ~= get_player_team(LocalPlayer) then
+            if Toggles.Hitbox.Value and get_player_team(player) ~= get_player_team(LocalPlayer) and hitboxsafe then
                 hrp.Size = Vector3.new(Options.HitboxSize.Value, Options.HitboxSize.Value, Options.HitboxSize.Value)
                 hrp.Transparency = Options.HitboxTransparency.Value
             else
@@ -1740,6 +1735,7 @@ pcall(function()
                 end)
             end)
         end 
+        
         if type(obj) == "table" and rawget(obj, "getTrueSpread") then
             pcall(function()
                 local oldgettruespread
@@ -1750,7 +1746,8 @@ pcall(function()
                     return oldgettruespread(p1)
                 end)
             end)
-        end 
+        end
+
         if type(obj) == "function" and debug.getinfo(obj).name == "Flash" then
             pcall(function()
                 local oldflash
@@ -1774,16 +1771,11 @@ pcall(function()
             end)
         end
         if type(obj) == "table" and rawget(obj, "shoot") then
-            if obj.shoot and #debug.getupvalues(obj.shoot) == 25 then
+            if obj.shoot and typeof(obj.shoot) == "function" and #debug.getupvalues(obj.shoot) == 25 then
                 pcall(function()
                     SendFunc = debug.getupvalue(obj.shoot, 13).Inventory.ShootWeapon.Send
                 end)
             end
-        end
-        if type(obj) == "table" and rawget(obj, "updateCamera") and typeof(rawget(obj, "updateCamera")) == "function" then
-            pcall(function()
-                updateCam = obj.updateCamera
-            end)
         end
         if type(obj) == 'table' and rawget(obj, "getCurrentEquipped") then
             pcall(function()
@@ -1791,6 +1783,10 @@ pcall(function()
             end)
         end
     end
+end)
+
+pcall(function(...)
+    updateCam = filtergc("table", {Keys = {"updateCamera"}}, true).updateCamera
 end)
 
 local function getEquipped()
@@ -1817,114 +1813,9 @@ task.spawn(function()
     end
 end)
 
-local success, result = pcall(function()
-    local originalUpdateCam = clonefunction(updateCam)
-    local t3 = debug.getupvalue(originalUpdateCam, 1)
-    local v12 = debug.getupvalue(originalUpdateCam, 2)
-    local CurrentCamera = Workspace.CurrentCamera
-    local v5 = debug.getupvalue(originalUpdateCam, 5)
-    local Constants = debug.getupvalue(originalUpdateCam, 4)
-    local v6 = debug.getupvalue(originalUpdateCam, 6)
-    local v8 = debug.getupvalue(originalUpdateCam, 7)
-    local v9 = debug.getupvalue(originalUpdateCam, 9)         
-    local v10 = debug.getupvalue(originalUpdateCam, 11)
-    local getCameraInput = debug.getupvalue(originalUpdateCam, 12)
-    local getCameraCFrame = debug.getupvalue(originalUpdateCam, 13)
 
-    local refs = {
-        v9 = v9,
-        v10 = v10
-    }
-
-    return function(p1)
-        local v1 = nil
-
-        for k, v in next, t3 do
-            v1 = v
-            break
-        end
-
-        if v1 ~= nil and v12:getGoal() ~= v1 then
-            v12:reset(v1)
-        end
-
-        local v3 = math.clamp(if v1 then v1 else v12:getPosition(), 1, 80)
-
-        if CurrentCamera.FieldOfViewMode ~= Enum.FieldOfViewMode.Diagonal then
-            CurrentCamera.FieldOfViewMode = Enum.FieldOfViewMode.Diagonal
-        end
-
-        if math.abs(CurrentCamera.FieldOfView - v3) > 0.001 then
-            CurrentCamera.FieldOfView = v3
-        end
-
-        local v52 = v3
-        local v7 = v5
-
-        local DEFAULT_CAMERA_FOV = Constants.DEFAULT_CAMERA_FOV
-
-        if math.abs(v52 - (DEFAULT_CAMERA_FOV - 37)) < 0.1 or math.abs(v52 - (DEFAULT_CAMERA_FOV - 60)) < 0.1 then
-            v7 = v5 * v6
-        end
-
-        local v92 = 1
-
-        if not v8 then
-            local ok, result = pcall(function()
-                return require(ReplicatedStorage.Controllers.AimAssistController)
-            end)
-
-            if ok and result then
-                v8 = result
-            end
-        end
-
-        if v8 and v8.GetFrictionMultiplier then
-            v92 = v8.GetFrictionMultiplier()
-        end
-
-        local v11 = v52 / Constants.DEFAULT_CAMERA_FOV * v7 * v92
-
-        if refs.v9 then
-            if math.abs(refs.v9 - v11) > 0.0001 then
-                refs.v9 = v11
-                UserInputService.MouseDeltaSensitivity = v11
-            end
-        else
-            refs.v9 = v11
-            UserInputService.MouseDeltaSensitivity = v11
-        end
-
-        local v13
-
-        if refs.v10 then
-            if not (math.abs(refs.v10 - v11) <= 0.0001) then
-                v13 = getCameraInput()
-
-                if v13 and v13.setTouchSensitivity then
-                    refs.v10 = v11
-                    v13.setTouchSensitivity(v11)
-                end
-            end
-        else
-            v13 = getCameraInput()
-
-            if v13 and v13.setTouchSensitivity then
-                refs.v10 = v11
-                v13.setTouchSensitivity(v11)
-            end
-        end
-
-        local v15 = if p1 then p1 else getCameraCFrame()
-
-        CurrentCamera.CFrame = v15
-    end
-end)
-
-if not success then
-    warn("could not hook cam: " .. tostring(result))
-else
-    local oldUpdateCam
+local oldUpdateCam
+local succes, errorms = pcall(function(...)
     oldUpdateCam = hookfunction(updateCam, function(p1)
         if Toggles.Aimbot and Toggles.Aimbot.Value and AimbotTarget
             and Options.AimbotHoldkey and Options.AimbotHoldkey:GetState() then
@@ -1933,9 +1824,32 @@ else
             end)
             if ok and lookCF then p1 = lookCF end
         end
-        return result(p1)
+        return oldUpdateCam(p1)
     end)
-end
+end)
+
+local old56
+pcall(function()
+    old56 = hookfunction(task.wait, function(t)
+        if t == 5 then
+            hitboxsafe = true
+            t = 9e9
+        end 
+        return old56(t)
+    end)
+end)
+
+task.spawn(function()
+    repeat 
+        wait()
+    until hitboxsafe
+
+    Library:Notify({
+        Title = "Success",
+        Description = "Hitbox will now work",
+        Time = 4,
+    })
+end)
 
 task.spawn(function()
     while true do
@@ -1973,31 +1887,22 @@ task.spawn(function()
     end
 end)
 
-local oldspoof
-oldspoof = hookmetamethod(game, "__index", function(self, key)
-    if key == "Size" and typeof(self) == "Instance" and self:IsA("BasePart") then
-        local player = Players:GetPlayerFromCharacter(self.Parent)
-        if player then
-            return Vector3.new(2, 2, 2)
-        end
-    end
-    return oldspoof(self, key)
-end)
-
 local oldshoot
-oldshoot = hookfunction(SendFunc, function(...)
-    local args = {...}
-    if args[1].Bullets[1].Hits[1] then
-        if Toggles.Ragebot.Value and RageTarget then
-            args[1].Bullets[1].Hits[1].Instance = RageTarget
-            args[1].Bullets[1].Hits[1].Position = RageTarget.Position
+local success3, errormessage3 = pcall(function(...)
+    oldshoot = hookfunction(SendFunc, function(...)
+        local args = {...}
+        if args[1].Bullets[1].Hits[1] then
+            if Toggles.Ragebot.Value and RageTarget then
+                args[1].Bullets[1].Hits[1].Instance = RageTarget
+                args[1].Bullets[1].Hits[1].Position = RageTarget.Position
+            end
+            if Toggles.SilentAim.Value and SilentTarget then
+                args[1].Bullets[1].Hits[1].Instance = SilentTarget
+                args[1].Bullets[1].Hits[1].Position = SilentTarget.Position
+            end
         end
-        if Toggles.SilentAim.Value and SilentTarget then
-            args[1].Bullets[1].Hits[1].Instance = SilentTarget
-            args[1].Bullets[1].Hits[1].Position = SilentTarget.Position
-        end
-    end
-    return oldshoot(unpack(args))
+        return oldshoot(unpack(args))
+    end)
 end)
 
 task.spawn(function()
@@ -2007,7 +1912,7 @@ task.spawn(function()
                 for _, obj in next, firerateobjs do
                     pcall(function()
                         setreadonly(obj, false)
-                        obj.FireRate = Options.FirerateSlider.Value
+                        rawset(obj, "FireRate", math.max(Options.FirerateSlider.Value, 0.01))
                         setreadonly(obj, true)
                     end)
                 end
@@ -2015,7 +1920,7 @@ task.spawn(function()
                 for i, obj in next, firerateobjs do
                     pcall(function()
                         setreadonly(obj, false)
-                        obj.FireRate = original[i].FireRate
+                        rawset(obj, "FireRate", original[i].FireRate) 
                         setreadonly(obj, true)
                     end)
                 end
@@ -2023,7 +1928,6 @@ task.spawn(function()
         end)
     end
 end)
-
 
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
