@@ -6,20 +6,19 @@ on:
 jobs:
   notify:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
-      - name: Send to Discord
+      - name: Create Release and Send to Discord
         env:
           WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Strip any hidden whitespace/newlines from the secret
           CLEAN_URL=$(echo "$WEBHOOK_URL" | tr -d '[:space:]')
-
-          echo "URL length: ${#CLEAN_URL}"
-          echo "URL starts with: ${CLEAN_URL:0:30}..."
 
           FILES=$(git diff --name-status HEAD~1 HEAD)
           ADDED=$(echo "$FILES" | grep '^A' | cut -f2)
@@ -27,34 +26,46 @@ jobs:
           REMOVED=$(echo "$FILES" | grep '^D' | cut -f2)
 
           MSG="${{ github.event.head_commit.message }}"
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+          TAG="release-${SHORT_SHA}"
 
-          # Build the loadstring code block for added/modified files
+          # Collect all added/modified files
+          ALL_FILES=""
+          if [ -n "$ADDED" ]; then
+            ALL_FILES="${ALL_FILES}${ADDED}"$'\n'
+          fi
+          if [ -n "$MODIFIED" ]; then
+            ALL_FILES="${ALL_FILES}${MODIFIED}"$'\n'
+          fi
+
+          # Build codeblock and download buttons
           CODEBLOCK=""
           DOWNLOAD_BUTTONS=""
-          
-          # Process added files
-          if [ -n "$ADDED" ]; then
+
+          if [ -n "$ALL_FILES" ]; then
+            # Create the release first
+            gh release create "$TAG" \
+              --title "Release $SHORT_SHA" \
+              --notes "$MSG"
+
             while IFS= read -r file; do
               if [ -n "$file" ]; then
                 FILENAME=$(basename "$file")
-                CODEBLOCK="${CODEBLOCK}loadstring(game:HttpGet(\"https://raw.githubusercontent.com/Lutosys/opensrc/refs/heads/main/${FILENAME}\"))()\n"
-                DOWNLOAD_BUTTONS="${DOWNLOAD_BUTTONS}[ Download ${FILENAME}](https://raw.githubusercontent.com/Lutosys/opensrc/refs/heads/main/${FILENAME}?download=1)\n"
+
+                # Upload file to the release
+                gh release upload "$TAG" "$file" --clobber
+
+                # Build download URL (these auto-download!)
+                DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${FILENAME}"
+
+                CODEBLOCK="${CODEBLOCK}loadstring(game:HttpGet(\"https://raw.githubusercontent.com/${{ github.repository }}/refs/heads/main/${FILENAME}\"))()\n"
+                DOWNLOAD_BUTTONS="${DOWNLOAD_BUTTONS}[⬇️ Download ${FILENAME}](${DOWNLOAD_URL})\n"
               fi
-            done <<< "$ADDED"
-          fi
-          
-          # Process modified files
-          if [ -n "$MODIFIED" ]; then
-            while IFS= read -r file; do
-              if [ -n "$file" ]; then
-                FILENAME=$(basename "$file")
-                CODEBLOCK="${CODEBLOCK}loadstring(game:HttpGet(\"https://raw.githubusercontent.com/Lutosys/opensrc/refs/heads/main/${FILENAME}\"))()\n"
-                DOWNLOAD_BUTTONS="${DOWNLOAD_BUTTONS}[ Download ${FILENAME}](https://raw.githubusercontent.com/Lutosys/opensrc/refs/heads/main/${FILENAME}?download=1)\n"
-              fi
-            done <<< "$MODIFIED"
+            done <<< "$ALL_FILES"
           fi
 
-          # Remove trailing newlines
+          # Clean up empty lines
           if [ -n "$CODEBLOCK" ]; then
             CODEBLOCK=$(echo -e "$CODEBLOCK" | sed '/^$/d')
           fi
@@ -78,13 +89,12 @@ jobs:
                   {name: "Added", value: ($added | if . == "" then "None" else . end)},
                   {name: "Modified", value: ($modified | if . == "" then "None" else . end)},
                   {name: "Removed", value: ($removed | if . == "" then "None" else . end)},
-                  {name: "Download", value: (if $downloads != "" then $downloads else "No files to download" end), inline: false},
+                  {name: "⬇️ Download", value: (if $downloads != "" then $downloads else "No files to download" end), inline: false},
                   {name: "Loadstring", value: ("```lua\n" + $codeblock + "\n```"), inline: false}
                 ]
               }]
             }')
 
-          # Only send if there's code to show
           if [ -n "$CODEBLOCK" ]; then
             curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$CLEAN_URL"
           else
