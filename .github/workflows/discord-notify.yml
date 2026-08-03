@@ -30,7 +30,6 @@ jobs:
           SHORT_SHA="${SHORT_SHA:0:7}"
           TAG="release-${SHORT_SHA}"
 
-          # Collect all added/modified files
           ALL_FILES=""
           if [ -n "$ADDED" ]; then
             ALL_FILES="${ALL_FILES}${ADDED}"$'\n'
@@ -39,12 +38,10 @@ jobs:
             ALL_FILES="${ALL_FILES}${MODIFIED}"$'\n'
           fi
 
-          # Build codeblock and download buttons
           CODEBLOCK=""
           DOWNLOAD_BUTTONS=""
 
           if [ -n "$ALL_FILES" ]; then
-            # Create the release first
             gh release create "$TAG" \
               --title "Release $SHORT_SHA" \
               --notes "$MSG"
@@ -53,19 +50,16 @@ jobs:
               if [ -n "$file" ]; then
                 FILENAME=$(basename "$file")
 
-                # Upload file to the release
                 gh release upload "$TAG" "$file" --clobber
 
-                # Build download URL (these auto-download!)
                 DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${FILENAME}"
 
                 CODEBLOCK="${CODEBLOCK}loadstring(game:HttpGet(\"https://raw.githubusercontent.com/${{ github.repository }}/refs/heads/main/${FILENAME}\"))()\n"
-                DOWNLOAD_BUTTONS="${DOWNLOAD_BUTTONS}[⬇️ Download ${FILENAME}](${DOWNLOAD_URL})\n"
+                DOWNLOAD_BUTTONS="${DOWNLOAD_BUTTONS}[${FILENAME}](${DOWNLOAD_URL})\n"
               fi
             done <<< "$ALL_FILES"
           fi
 
-          # Clean up empty lines
           if [ -n "$CODEBLOCK" ]; then
             CODEBLOCK=$(echo -e "$CODEBLOCK" | sed '/^$/d')
           fi
@@ -89,7 +83,7 @@ jobs:
                   {name: "Added", value: ($added | if . == "" then "None" else . end)},
                   {name: "Modified", value: ($modified | if . == "" then "None" else . end)},
                   {name: "Removed", value: ($removed | if . == "" then "None" else . end)},
-                  {name: "⬇️ Download", value: (if $downloads != "" then $downloads else "No files to download" end), inline: false},
+                  {name: "Download", value: (if $downloads != "" then $downloads else "No files to download" end), inline: false},
                   {name: "Loadstring", value: ("```lua\n" + $codeblock + "\n```"), inline: false}
                 ]
               }]
