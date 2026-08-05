@@ -26,7 +26,7 @@ local success: boolean, Module: any = pcall(require, Net)
 if not success or not Module then return warn("Module did not initialize") end 
 local packets: any = Module.packets
 if not packets then return warn("packets did not initialize") end 
-local attack: any = packets.attack
+local attack: any = packets.YEbJcl0uwJyv97dp
 if not attack then return warn("attack did not initialize") end
 local send = attack.send
 if not send then return warn("send did not initialize") end
