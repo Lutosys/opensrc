@@ -26,7 +26,13 @@ local success: boolean, Module: any = pcall(require, Net)
 if not success or not Module then return warn("Module did not initialize") end 
 local packets: any = Module.packets
 if not packets then return warn("packets did not initialize") end 
-local attack: any = packets.YEbJcl0uwJyv97dp
+local AttackFunc = filtergc("function", {Name = "Attack"}, true)
+if not AttackFunc then return warn("Didnt get attackfuncc") end
+local DoAttack = debug.getproto(AttackFunc, 1)
+if not DoAttack then return warn("Didnt get DoAttack") end
+local secretpacketname = debug.getconstant(DoAttack, 76)
+if not secretpacketname then return warn("failed to get attack packet name") end
+local attack: any = packets[secretpacketname]
 if not attack then return warn("attack did not initialize") end
 local send = attack.send
 if not send then return warn("send did not initialize") end
