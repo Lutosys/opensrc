@@ -21,13 +21,11 @@ jobs:
         run: |
           CLEAN_URL=$(echo "$WEBHOOK_URL" | tr -d '[:space:]')
 
-          # Check if WEBHOOK_URL is set
           if [ -z "$CLEAN_URL" ]; then
             echo "Error: WEBHOOK_URL is not set"
             exit 1
           fi
 
-          # Get changed files
           FILES=$(git diff --name-status HEAD~1 HEAD)
           ADDED=$(echo "$FILES" | grep '^A' | cut -f2)
           MODIFIED=$(echo "$FILES" | grep '^M' | cut -f2)
@@ -38,95 +36,83 @@ jobs:
           SHORT_SHA="${SHORT_SHA:0:7}"
           TAG="release-${SHORT_SHA}"
 
-          # Only proceed if there are files to process
-          if [ -n "$ADDED" ] || [ -n "$MODIFIED" ]; then
-            # Process files
-            CODEBLOCK=""
-            DOWNLOAD_BUTTONS=""
-            
-            # Combine added and modified files
-            ALL_FILES=""
-            if [ -n "$ADDED" ]; then
-              ALL_FILES="${ALL_FILES}${ADDED}"$'\n'
-            fi
-            if [ -n "$MODIFIED" ]; then
-              ALL_FILES="${ALL_FILES}${MODIFIED}"$'\n'
+          CODEBLOCK=""
+          DOWNLOAD_BUTTONS=""
+
+          ALL_FILES=""
+          if [ -n "$ADDED" ]; then
+            ALL_FILES="${ALL_FILES}${ADDED}"$'\n'
+          fi
+          if [ -n "$MODIFIED" ]; then
+            ALL_FILES="${ALL_FILES}${MODIFIED}"$'\n'
+          fi
+
+          # Only create a release / upload if there are added or modified files
+          if [ -n "$ALL_FILES" ]; then
+            echo "Processing files:"
+            echo "$ALL_FILES"
+
+            if ! gh release view "$TAG" &>/dev/null; then
+              gh release create "$TAG" \
+                --title "Release $SHORT_SHA" \
+                --notes "$MSG" \
+                --target main
             fi
 
-            # Upload files to release
-            if [ -n "$ALL_FILES" ]; then
-              echo "Processing files:"
-              echo "$ALL_FILES"
-              
-              # Check if release exists, create if not
-              if ! gh release view "$TAG" &>/dev/null; then
-                gh release create "$TAG" \
-                  --title "Release $SHORT_SHA" \
-                  --notes "$MSG" \
-                  --target main
+            while IFS= read -r file; do
+              if [ -n "$file" ] && [ -f "$file" ]; then
+                FILENAME=$(basename "$file")
+                echo "Uploading: $file as $FILENAME"
+
+                gh release upload "$TAG" "$file" --clobber || true
+
+                DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${FILENAME}"
+                RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/refs/heads/main/${file}"
+
+                CODEBLOCK="${CODEBLOCK}loadstring(game:HttpGet(\"${RAW_URL}\"))()\n"
+                DOWNLOAD_BUTTONS="${DOWNLOAD_BUTTONS}[${FILENAME}](${DOWNLOAD_URL})\n"
               fi
-              
-              while IFS= read -r file; do
-                if [ -n "$file" ] && [ -f "$file" ]; then
-                  FILENAME=$(basename "$file")
-                  echo "Uploading: $file as $FILENAME"
-                  
-                  # Upload file
-                  gh release upload "$TAG" "$file" --clobber || true
-                  
-                  DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${FILENAME}"
-                  RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/refs/heads/main/${file}"
-                  
-                  CODEBLOCK="${CODEBLOCK}loadstring(game:HttpGet(\"${RAW_URL}\"))()\n"
-                  DOWNLOAD_BUTTONS="${DOWNLOAD_BUTTONS}[${FILENAME}](${DOWNLOAD_URL})\n"
-                fi
-              done <<< "$ALL_FILES"
-            fi
+            done <<< "$ALL_FILES"
+          fi
 
-            # Clean up the strings
-            CODEBLOCK=$(echo -e "$CODEBLOCK" | sed '/^$/d' | sed 's/\\n/\n/g')
-            DOWNLOAD_BUTTONS=$(echo -e "$DOWNLOAD_BUTTONS" | sed '/^$/d')
+          CODEBLOCK=$(echo -e "$CODEBLOCK" | sed '/^$/d' | sed 's/\\n/\n/g')
+          DOWNLOAD_BUTTONS=$(echo -e "$DOWNLOAD_BUTTONS" | sed '/^$/d')
 
-            # Prepare Discord payload
-            PAYLOAD=$(jq -n \
-              --arg msg "$MSG" \
-              --arg short_sha "$SHORT_SHA" \
-              --arg added "$ADDED" \
-              --arg modified "$MODIFIED" \
-              --arg removed "$REMOVED" \
-              --arg codeblock "$CODEBLOCK" \
-              --arg downloads "$DOWNLOAD_BUTTONS" \
-              '{
-                embeds: [{
-                  title: "Commit Pushed",
-                  color: 2829617,
-                  fields: [
-                    {name: "Commit Message", value: ($msg | if . == "" then "No message" else . end)},
-                    {name: "Commit Hash", value: $short_sha, inline: false},
-                    {name: "Added", value: ($added | if . == "" then "None" else . end), inline: true},
-                    {name: "Modified", value: ($modified | if . == "" then "None" else . end), inline: true},
-                    {name: "Removed", value: ($removed | if . == "" then "None" else . end), inline: true},
-                    {name: "Download", value: (if $downloads != "" then $downloads else "No files to download" end), inline: false},
-                    {name: "Loadstring", value: ("```lua\n" + $codeblock + "\n```"), inline: false}
-                  ],
-                  footer: {
-                    text: "GitHub Actions"
-                  }
-                }]
-              }')
+          PAYLOAD=$(jq -n \
+            --arg msg "$MSG" \
+            --arg short_sha "$SHORT_SHA" \
+            --arg added "$ADDED" \
+            --arg modified "$MODIFIED" \
+            --arg removed "$REMOVED" \
+            --arg codeblock "$CODEBLOCK" \
+            --arg downloads "$DOWNLOAD_BUTTONS" \
+            '{
+              embeds: [{
+                title: "Commit Pushed",
+                color: 2829617,
+                fields: [
+                  {name: "Commit Message", value: ($msg | if . == "" then "No message" else . end)},
+                  {name: "Commit Hash", value: $short_sha, inline: false},
+                  {name: "Added", value: ($added | if . == "" then "None" else . end), inline: true},
+                  {name: "Modified", value: ($modified | if . == "" then "None" else . end), inline: true},
+                  {name: "Removed", value: ($removed | if . == "" then "None" else . end), inline: true},
+                  {name: "Download", value: (if $downloads != "" then $downloads else "No files to download" end), inline: false},
+                  {name: "Loadstring", value: (if $codeblock != "" then "```lua\n" + $codeblock + "\n```" else "No loadstrings" end), inline: false}
+                ],
+                footer: {
+                  text: "GitHub Actions"
+                }
+              }]
+            }')
 
-            # Send to Discord
-            echo "Sending webhook to Discord..."
-            RESPONSE=$(curl -s -w "%{http_code}" -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$CLEAN_URL")
-            HTTP_CODE=${RESPONSE: -3}
-            
-            if [ "$HTTP_CODE" -eq 204 ]; then
-              echo "Discord webhook sent successfully!"
-            else
-              echo "Failed to send webhook. HTTP Code: $HTTP_CODE"
-              echo "Response: ${RESPONSE%???}"
-              exit 1
-            fi
+          echo "Sending webhook to Discord..."
+          RESPONSE=$(curl -s -w "%{http_code}" -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$CLEAN_URL")
+          HTTP_CODE=${RESPONSE: -3}
+
+          if [ "$HTTP_CODE" -eq 204 ]; then
+            echo "Discord webhook sent successfully!"
           else
-            echo "No files added or modified, skipping webhook"
+            echo "Failed to send webhook. HTTP Code: $HTTP_CODE"
+            echo "Response: ${RESPONSE%???}"
+            exit 1
           fi
