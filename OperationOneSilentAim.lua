@@ -1,3 +1,5 @@
+--not detected i think
+
 for _, actor in pairs(getactors()) do
     run_on_actor(actor, [=[
 		getgenv().config = getgenv().config or {
