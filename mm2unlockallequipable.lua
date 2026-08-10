@@ -1,4 +1,4 @@
-if not isfile("mm2data.txt") then
+if not isfile("mm2data.lua") then
     local result = request({
         Url = "https://raw.githubusercontent.com/Lutosys/opensrc/refs/heads/main/mm2meshes.lua",
         Method = "GET",
@@ -233,4 +233,3 @@ while wait() do
         end
     end
 end
-
