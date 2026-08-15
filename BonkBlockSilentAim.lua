@@ -13,6 +13,7 @@ local services = setmetatable({}, {
 local utility = {
 	shoot = filtergc("function", {Name = 'shoot'}, true),
 	isFriendlyInstance = filtergc("function", {Name = "isFriendlyInstance"}, true),
+	IsInSameTeam = filtergc("function", {Name = "IsInSameTeam"}, true),
 	target = nil,
 	Workspace = services.Workspace,
 	Players = services.Players,
@@ -71,7 +72,12 @@ utility.GetClosestPlayer = function(self)
 		if not hum or hum.Health <= 0 then continue end
 
 		if self.isFriendlyInstance(char) then continue end 
-
+		if self.Players:GetPlayerFromCharacter(char) then
+			if self.IsInSameTeam(self.Player, self.Players:GetPlayerFromCharacter(char)) then
+				continue
+			end
+		end
+		
 		local screenPos, onScreen = camera:WorldToViewportPoint(hrp.Position)
 		if onScreen then
 			local distance = (Vector2.new(screenPos.X, screenPos.Y) - self.UserInputService:GetMouseLocation()).Magnitude
