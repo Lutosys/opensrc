@@ -75,8 +75,14 @@ utility.IsSameTeam = function(self, char, owner)
 	local myChar = self.Player.Character
 	local myTeam = (myChar and myChar:GetAttribute("MatchTeamId")) or self.Player:GetAttribute("MatchTeamId")
 	local myGroup = (myChar and myChar:GetAttribute("MatchGroupId")) or self.Player:GetAttribute("MatchGroupId")
-	local team = char:GetAttribute("MatchTeamId")
-	local group = char:GetAttribute("MatchGroupId")
+
+	local team = owner and owner:GetAttribute("MatchTeamId")
+	local group = owner and owner:GetAttribute("MatchGroupId")
+	if team == nil or group == nil then
+		team = char:GetAttribute("MatchTeamId")
+		group = char:GetAttribute("MatchGroupId")
+	end
+
 	if myTeam == nil or myGroup == nil or team == nil or group == nil then
 		return false
 	end
