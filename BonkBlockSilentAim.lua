@@ -103,7 +103,8 @@ utility.GetClosestPlayer = function(self)
 		if not hum or hum.Health <= 0 then continue end
 
 		if self:IsSameTeam(char, self.Players:GetPlayerFromCharacter(char)) then continue end
-		
+		if char:GetAttribute("IsDBNO") then continue end
+
 		local screenPos, onScreen = camera:WorldToViewportPoint(hrp.Position)
 		if onScreen then
 			local distance = (Vector2.new(screenPos.X, screenPos.Y) - self.UserInputService:GetMouseLocation()).Magnitude
