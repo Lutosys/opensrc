@@ -45,20 +45,17 @@ utility.isVisible = function(self, target)
 	if not target or not target:IsA("BasePart") then
 		return false
 	end
-    local origin = self.Workspace.CurrentCamera.CFrame
-    local params = RaycastParams.new()
-    params.FilterType = Enum.RaycastFilterType.Exclude
-    params.FilterDescendantsInstances = {self.Player.Character}
-    params.IgnoreWater = true
+	local origin = self.Workspace.CurrentCamera.CFrame
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = {self.Player.Character}
+	params.IgnoreWater = true
 
-    local direction = (target.Position - origin.Position)
-    local result = self.Workspace:Raycast(origin.Position, direction, params)
-
-    if result then
-        return self.Players:GetPlayerFromCharacter(result.Instance:FindFirstAncestorOfClass("Model")) ~= nil
-    else
-        return false
-    end
+	local result = self.Workspace:Raycast(origin.Position, (target.Position - origin.Position), params)
+	if result then
+		return result.Instance:FindFirstAncestorOfClass("Model") == target.Parent
+	end
+	return false
 end
 
 utility.getAllPlayers = function(self)
@@ -74,6 +71,18 @@ utility.getAllPlayers = function(self)
 	return r
 end
 
+utility.IsSameTeam = function(self, char, owner)
+	local myChar = self.Player.Character
+	local myTeam = (myChar and myChar:GetAttribute("MatchTeamId")) or self.Player:GetAttribute("MatchTeamId")
+	local myGroup = (myChar and myChar:GetAttribute("MatchGroupId")) or self.Player:GetAttribute("MatchGroupId")
+	local team = char:GetAttribute("MatchTeamId")
+	local group = char:GetAttribute("MatchGroupId")
+	if myTeam == nil or myGroup == nil or team == nil or group == nil then
+		return false
+	end
+	return myGroup == group and myTeam == team
+end
+
 utility.GetClosestPlayer = function(self)
 	local closestDistance = math.huge
 	local closest = nil
@@ -87,12 +96,7 @@ utility.GetClosestPlayer = function(self)
 		local hum = char:FindFirstChild("Humanoid")
 		if not hum or hum.Health <= 0 then continue end
 
-		if self.isFriendlyInstance(char) then continue end 
-		if self.Players:GetPlayerFromCharacter(char) then
-			if self.IsInSameTeam(self.Player, self.Players:GetPlayerFromCharacter(char)) then
-				continue
-			end
-		end
+		if self:IsSameTeam(char, self.Players:GetPlayerFromCharacter(char)) then continue end
 		
 		local screenPos, onScreen = camera:WorldToViewportPoint(hrp.Position)
 		if onScreen then
