@@ -1,167 +1,100 @@
-local services = setmetatable({}, {
-	__index = function(self, servicename)
-		local success, service = pcall(game.GetService, game, servicename)
-		if not success or not service then return nil end
-		local _, cleanedservice = pcall(function()
-			return cloneref(service)
-		end)
-		rawset(self, servicename, cleanedservice)
-		return cleanedservice
-	end,
-})
+local Workspace: Workspace? = game:GetService("Workspace")
+if not Workspace then return warn("Workspace did not initialize") end 
+local Players: Players? = game:GetService("Players")
+if not Players then return warn("Players did not initialize") end 
+local RunService: RunService? = game:GetService("RunService")
+if not RunService then return warn("RunService did not initialize") end 
+local ReplicatedStorage: ReplicatedStorage? = game:GetService("ReplicatedStorage")
+if not ReplicatedStorage then return warn("ReplicatedStorage did not initialize") end 
+local target: Instance? = nil
 
-local utility = {
-	shoot = filtergc("function", {Name = 'shoot'}, true),
-	isFriendlyInstance = filtergc("function", {Name = "isFriendlyInstance"}, true),
-	IsInSameTeam = filtergc("function", {Name = "IsInSameTeam"}, true),
-	target = nil,
-	Workspace = services.Workspace,
-	Players = services.Players,
-	RunService = services.RunService,
-	UserInputService = services.UserInputService,
-	oldShoot = nil,
-	wallcheck = true,
-}
+local LocalPlayer: Player? = Players.LocalPlayer
+if not LocalPlayer then return warn("LocalPlayer did not initialize") end 
 
-utility.SilentFovCircle = Drawing.new("Circle")
-utility.SilentFovCircle.Position = utility.UserInputService:GetMouseLocation()
-utility.SilentFovCircle.Radius = 320
-utility.SilentFovCircle.Color = Color3.fromRGB(0, 255, 255)
-utility.SilentFovCircle.Filled = false
-utility.SilentFovCircle.NumSides = 128
-utility.SilentFovCircle.Thickness = 1
-utility.SilentFovCircle.Visible = true
+local function isVisible(target: Instance?): boolean
+    if not target or typeof(target) ~= "Instance" or target.Parent == nil then 
+        warn("target is nil/passed a weird userdata")
+        return false 
+    end 
 
-utility.Highlight = Instance.new("Highlight")
-utility.Highlight.FillColor = Color3.fromRGB(255, 0, 0)
-utility.Highlight.FillTransparency = 1  
-utility.Highlight.OutlineColor = Color3.fromRGB(255, 0, 0)  
-utility.Highlight.OutlineTransparency = 0  
-utility.Highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+    local cam: Camera? = Workspace.CurrentCamera
+    if not cam then warn("camera is nil"); return false end 
+    local char: Model? = LocalPlayer.Character
+    if not char then warn("character is nil"); return false end
+    local origin: CFrame = Workspace.CurrentCamera.CFrame
+    if not origin or typeof(origin) ~= "CFrame" then 
+        warn("couldnt get origin ( cam )")
+        return false
+    end
 
-utility.Player = utility.Players.LocalPlayer
+    local params: RaycastParams = RaycastParams.new()
+    if not params or typeof(params) ~= "RaycastParams" then 
+        warn("couldnt create params")
+        return false 
+    end 
 
-utility.isVisible = function(self, target)
-	if not target or not target:IsA("BasePart") then
-		return false
-	end
-	local origin = self.Workspace.CurrentCamera.CFrame
-	local params = RaycastParams.new()
-	params.FilterType = Enum.RaycastFilterType.Exclude
-	params.FilterDescendantsInstances = {self.Player.Character}
-	params.IgnoreWater = true
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {char}
+    params.IgnoreWater = true
 
-	local result = self.Workspace:Raycast(origin.Position, (target.Position - origin.Position), params)
-	if result then
-		return result.Instance:FindFirstAncestorOfClass("Model") == target.Parent
-	end
-	return false
+    if not target:IsA("BasePart") then return false end
+    
+    local direction: Vector3 = (target.Position - origin.Position)
+    local result: RaycastResult? = Workspace:Raycast(origin.Position, direction, params)
+
+    if result then
+        local model: Instance? = result.Instance:FindFirstAncestorOfClass("Model")
+        return model ~= nil
+    else
+        return true
+    end
+end
+local UserInputService = game:GetService("UserInputService")
+
+local function GetClosestPlayer(): BasePart?
+    local closestDistance: number = math.huge
+    local closest: BasePart? = nil
+    local camera: Camera = Workspace.CurrentCamera
+    local GetPlayers: {Player} = Players:GetPlayers()
+
+    for _, v in pairs(GetPlayers) do
+        if v == LocalPlayer then continue end
+        
+        local char: Model? = v.Character
+        if not char then continue end
+        local hrp: BasePart? = char:FindFirstChild("HumanoidRootPart"):: BasePart?
+        if not hrp then continue end
+        local hum: Humanoid? = char:FindFirstChildOfClass("Humanoid")
+        if not hum or hum.Health <= 0 then continue end
+
+        local head: BasePart? = char:FindFirstChild("Head"):: BasePart?
+
+        if not head then continue end
+        local screenPos: Vector3, onScreen: boolean = camera:WorldToViewportPoint(hrp.Position)
+
+        if onScreen then
+            local distance: number = (Vector2.new(screenPos.X, screenPos.Y) - UserInputService:GetMouseLocation()).Magnitude
+            if distance < closestDistance then
+               if not isVisible(head) then continue end
+                closestDistance = distance
+                closest = head
+            end
+        end
+    end
+
+    return closest
 end
 
-utility.getAllPlayers = function(self)
-	local r = {}
-	for key, data in pairs(self.Players:GetPlayers()) do
-		table.insert(r, data.Character)
-	end	
-	for key, data in pairs(self.Workspace:GetChildren()) do
-		if data.Name:find("bot") then
-			table.insert(r, data)
-		end
-	end	
-	return r
-end
-
-utility.IsSameTeam = function(self, char, owner)
-	local myChar = self.Player.Character
-	local myTeam = (myChar and myChar:GetAttribute("MatchTeamId")) or self.Player:GetAttribute("MatchTeamId")
-	local myGroup = (myChar and myChar:GetAttribute("MatchGroupId")) or self.Player:GetAttribute("MatchGroupId")
-
-	local team = owner and owner:GetAttribute("MatchTeamId")
-	local group = owner and owner:GetAttribute("MatchGroupId")
-	if team == nil or group == nil then
-		team = char:GetAttribute("MatchTeamId")
-		group = char:GetAttribute("MatchGroupId")
-	end
-
-	if myTeam == nil or myGroup == nil or team == nil or group == nil then
-		return false
-	end
-	return myGroup == group and myTeam == team
-end
-
-utility.GetClosestPlayer = function(self)
-	local closestDistance = math.huge
-	local closest = nil
-	local camera = self.Workspace.CurrentCamera
-
-	for _, char in pairs(self:getAllPlayers()) do
-		local hrp = char:FindFirstChild("HumanoidRootPart")
-		if not hrp then continue end
-		local head = char:FindFirstChild("Head")
-		if not head then continue end
-		local hum = char:FindFirstChild("Humanoid")
-		if not hum or hum.Health <= 0 then continue end
-
-		if self:IsSameTeam(char, self.Players:GetPlayerFromCharacter(char)) then continue end
-		
-		local screenPos, onScreen = camera:WorldToViewportPoint(hrp.Position)
-		if onScreen then
-			local distance = (Vector2.new(screenPos.X, screenPos.Y) - self.UserInputService:GetMouseLocation()).Magnitude
-			if distance <= utility.SilentFovCircle.Radius and distance < closestDistance then
-				local visiblePart = nil
-				
-				if self.wallcheck then
-					if self:isVisible(head) then
-						visiblePart = head
-					else
-						for _, bodypart in ipairs(char:GetChildren()) do
-							if bodypart:IsA("BasePart") and self:isVisible(bodypart) then
-								visiblePart = bodypart
-								break
-							end
-						end
-					end
-					
-					if visiblePart then
-						closestDistance = distance
-						closest = visiblePart
-					end
-				else
-					closestDistance = distance
-					closest = head
-				end
-			end
-		end
-	end
-
-	return closest
-end
-
-utility.RunService.RenderStepped:Connect(function()
-    utility.target = utility:GetClosestPlayer()
-    utility.SilentFovCircle.Position = utility.UserInputService:GetMouseLocation()
-		if utility.target then
-				utility.Highlight.Parent = utility.target.Parent
-		else
-				utility.Highlight.Parent = nil
-		end
+RunService.RenderStepped:Connect(function()
+    target = GetClosestPlayer()
 end)
 
-local _, errormessage = pcall(function()
-	utility.oldShoot = hookfunction(utility.shoot, function(p1)
-		if utility.target then
-			local oldcf = utility.Workspace.CurrentCamera.CFrame
-			utility.Workspace.CurrentCamera.CFrame = CFrame.lookAt(utility.Workspace.CurrentCamera.CFrame.Position, utility.target.Position)
-			local result = utility.oldShoot(p1)
-			utility.Workspace.CurrentCamera.CFrame = oldcf
-			return result
-		end
-		return utility.oldShoot(p1)
-	end)
-end)
+local Cast = filtergc("function", {Name = "Cast"}, true)
 
-if utility.oldShoot ~= nil then
-	warn("success")
-else
-	print("couldnt hook:" ..tostring(errormessage))
-end
+local old: any
+old = hookfunction(Cast, function(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12)
+    if target and target:IsA("BasePart") then  
+        p1 = target.Position
+    end
+    return old(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12)
+end)
