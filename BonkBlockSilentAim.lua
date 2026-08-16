@@ -20,8 +20,24 @@ local utility = {
 	RunService = services.RunService,
 	UserInputService = services.UserInputService,
 	oldShoot = nil,
-	wallcheck = false
+	wallcheck = true,
 }
+
+utility.SilentFovCircle = Drawing.new("Circle")
+utility.SilentFovCircle.Position = utility.UserInputService:GetMouseLocation()
+utility.SilentFovCircle.Radius = 320
+utility.SilentFovCircle.Color = Color3.fromRGB(0, 255, 255)
+utility.SilentFovCircle.Filled = false
+utility.SilentFovCircle.NumSides = 128
+utility.SilentFovCircle.Thickness = 1
+utility.SilentFovCircle.Visible = true
+
+utility.Highlight = Instance.new("Highlight")
+utility.Highlight.FillColor = Color3.fromRGB(255, 0, 0)
+utility.Highlight.FillTransparency = 1  
+utility.Highlight.OutlineColor = Color3.fromRGB(255, 0, 0)  
+utility.Highlight.OutlineTransparency = 0  
+utility.Highlight.DepthMode = Enum.HighlightDepthMode.Occluded
 
 utility.Player = utility.Players.LocalPlayer
 
@@ -41,7 +57,7 @@ utility.isVisible = function(self, target)
     if result then
         return self.Players:GetPlayerFromCharacter(result.Instance:FindFirstAncestorOfClass("Model")) ~= nil
     else
-        return true
+        return false
     end
 end
 
@@ -81,14 +97,29 @@ utility.GetClosestPlayer = function(self)
 		local screenPos, onScreen = camera:WorldToViewportPoint(hrp.Position)
 		if onScreen then
 			local distance = (Vector2.new(screenPos.X, screenPos.Y) - self.UserInputService:GetMouseLocation()).Magnitude
-			if distance < closestDistance then
+			if distance <= utility.SilentFovCircle.Radius and distance < closestDistance then
+				local visiblePart = nil
+				
 				if self.wallcheck then
-					if not self:isVisible(head) then
-						continue
+					if self:isVisible(head) then
+						visiblePart = head
+					else
+						for _, bodypart in ipairs(char:GetChildren()) do
+							if bodypart:IsA("BasePart") and self:isVisible(bodypart) then
+								visiblePart = bodypart
+								break
+							end
+						end
 					end
+					
+					if visiblePart then
+						closestDistance = distance
+						closest = visiblePart
+					end
+				else
+					closestDistance = distance
+					closest = head
 				end
-				closestDistance = distance
-				closest = head
 			end
 		end
 	end
@@ -98,6 +129,12 @@ end
 
 utility.RunService.RenderStepped:Connect(function()
     utility.target = utility:GetClosestPlayer()
+    utility.SilentFovCircle.Position = utility.UserInputService:GetMouseLocation()
+		if utility.target then
+				utility.Highlight.Parent = utility.target.Parent
+		else
+				utility.Highlight.Parent = nil
+		end
 end)
 
 local _, errormessage = pcall(function()
