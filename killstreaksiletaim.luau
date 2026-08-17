@@ -3,11 +3,6 @@
 assert(typeof(filtergc) == "function", "your executor doesnt support filtergc")
 assert(typeof(hookfunction) == "function", "your executor doesnt support hookfunction")
 
-type areFriendly = (Player, Player) -> boolean
-
-local areFriendly: areFriendly = assert(filtergc("function", {Name = "areFriendly"}, true))
-if not areFriendly or typeof(areFriendly) ~= "function" then return warn("areFriendly did not initialize") end 
-
 local target: Instance? = nil
 
 local Workspace: Workspace? = game:GetService("Workspace")
@@ -37,6 +32,16 @@ if not attack then return warn("attack did not initialize") end
 local send = attack.send
 if not send then return warn("send did not initialize") end
 
+local Teams = require(Shared.Config.Teams)
+local IsFriendly = nil
+for _, func in pairs(Teams) do
+	if typeof(func) == "function" and debug.info(func, "l") == 56 then
+        IsFriendly = func
+    end
+end
+if not IsFriendly then
+    return warn("failed to get isfriendly func")
+end
 
 local LocalPlayer: Player? = Players.LocalPlayer
 if not LocalPlayer then return warn("LocalPlayer did not initialize") end 
@@ -88,7 +93,7 @@ local function GetClosestPlayer(): BasePart?
 
     for _, v in pairs(GetPlayers) do
         if v == LocalPlayer then continue end
-        
+
         local char: Model? = v.Character
         if not char then continue end
         local hrp: BasePart? = char:FindFirstChild("HumanoidRootPart"):: BasePart?
@@ -96,14 +101,12 @@ local function GetClosestPlayer(): BasePart?
         local hum: Humanoid? = char:FindFirstChildOfClass("Humanoid")
         if not hum or hum.Health <= 0 then continue end
 
-        if areFriendly and areFriendly(LocalPlayer, v) then
-            continue
-        end
-
         local head: BasePart? = char:FindFirstChild("Head"):: BasePart?
 
         if not head then continue end
         local screenPos: Vector3, onScreen: boolean = camera:WorldToViewportPoint(hrp.Position)
+
+        if IsFriendly(v, LocalPlayer) then continue end
 
         if onScreen then
             local distance: number = (Vector2.new(screenPos.X, screenPos.Y) - camera.ViewportSize / 2).Magnitude
@@ -131,8 +134,12 @@ local hookSuccess: boolean, errormessage: any = pcall(function()
                 local origin: Vector3 = cam.CFrame.Position
                 local direction: Vector3 = (target.Position - origin).Unit
 
-                if typeof(args) == "table" and args.rays then   
-                    args.rays = {Ray.new(origin, direction)}
+                if typeof(args) == "table" then   
+                    for key, arg in pairs(args) do
+                        if typeof(arg) == "table" then
+                            args[key] = {Ray.new(origin, direction)}
+                        end
+                    end
                 end
             end
         end
