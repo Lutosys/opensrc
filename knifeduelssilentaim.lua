@@ -26,24 +26,6 @@ local utility = {
 
 utility._index = utility
 
-utility.isVisible = function(target)
-	local camera = vars.Camera or services.Workspace.CurrentCamera
-	local origin = camera.CFrame
-	local params = RaycastParams.new()
-	params.FilterType = Enum.RaycastFilterType.Exclude
-	params.FilterDescendantsInstances = {vars.LocalPlayer.Character}
-	params.IgnoreWater = true
-
-	local direction = (target.Position - origin.Position)
-	local result = services.Workspace:Raycast(origin.Position, direction, params)
-
-	if result then
-		return services.Players:GetPlayerFromCharacter(result.Instance:FindFirstAncestorOfClass("Model")) ~= nil
-	else
-		return true
-	end
-end
-
 utility.GetClosestPlayer = function(self)
 	local closestDistance = math.huge
 	local closest = nil
@@ -69,7 +51,6 @@ utility.GetClosestPlayer = function(self)
 			if onScreen then
 				local distance = (Vector2.new(screenPos.X, screenPos.Y) - camera.ViewportSize / 2).Magnitude
 				if distance < closestDistance then
-					if not self.isVisible(head) then continue end
 					closestDistance = distance
 					closest = head
 				end
@@ -86,19 +67,21 @@ end)
 
 local _, errormessage = pcall(function(...)
 	utility.oldhook = hookfunction(os.clock, function(...)
-		if debug.info(debug.info(3, "f"), "n") == "AttemptThrow" then
-			if utility.target then
-				local camera = vars.Camera or services.Workspace.CurrentCamera
-				local oldcf = camera.CFrame
-				camera.CFrame = CFrame.lookAt(camera.CFrame.Position, utility.target.Position)
-				local result = utility.oldhook(...)
-				task.defer(function()
-					services.RunService.RenderStepped:Wait()
-					camera.CFrame = oldcf
-				end)
-				return result
-			end
-		end
+        pcall(function(...)
+            if debug.info(debug.info(2, "f"), "n") == "AttemptThrow" or debug.info(debug.info(3, "f"), "n") == "AttemptThrow" then
+                if utility.target then
+                    local camera = vars.Camera or services.Workspace.CurrentCamera
+                    local oldcf = camera.CFrame
+                    camera.CFrame = CFrame.lookAt(camera.CFrame.Position, utility.target.Position)
+                    local result = utility.oldhook(...)
+                    task.defer(function()
+                        services.RunService.RenderStepped:Wait()
+                        camera.CFrame = oldcf
+                    end)
+                    return result
+                end
+            end
+        end)
 		return utility.oldhook(...)
 	end)
 end)
