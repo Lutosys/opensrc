@@ -38,7 +38,7 @@ utility.GetClosestPlayer = function(self)
 		if not char then continue end
 
         if char:GetAttribute("Dead") then continue end
-        if char:GetAttribute("Health") and char:GetAttribute("Health") <= 0 then continue end
+        if char:GetAttribute("HP") and char:GetAttribute("HP") <= 0 then continue end
 
 		local hrp = char:FindFirstChild("HumanoidRootPart")
 		if not hrp then continue end
