@@ -4,23 +4,7 @@ local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
-local charfolder = Workspace:WaitForChild("Characters", 10)
-local hitboxsafe = false
-local function get_t() return charfolder and charfolder:FindFirstChild("Terrorists") end
-local function get_ct() return charfolder and charfolder:FindFirstChild("Counter-Terrorists") end
-
-local function get_player_team(player)
-    if not charfolder or not player then return nil end
-    local t, ct = get_t(), get_ct()
-    if t and t:FindFirstChild(player.Name) then
-        return "Terrorists"
-    end
-    if ct and ct:FindFirstChild(player.Name) then
-        return "Counter-Terrorists"
-    end
-    return nil
-end
-
+local hitboxsafe = true
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/"
 
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
@@ -49,6 +33,22 @@ local Tabs = {
 
 local SkinsBox = Tabs.StyleChanger:AddLeftGroupbox("Skins", "palette")
 local Skins2Box = Tabs.StyleChanger:AddRightGroupbox("Skins 2", "brush")
+local getPlayersOnTeam = filtergc("function", {Name = "getPlayersOnTeam"}, true)
+
+local function IsEnemy(p)
+    local Counter = getPlayersOnTeam("Counter-Terrorists")
+    local Terr = getPlayersOnTeam("Terrorists")
+    
+    if table.find(Terr, game.Players.LocalPlayer) and table.find(Terr, p) then
+        return true
+    end
+
+    if table.find(Counter, game.Players.LocalPlayer) and table.find(Counter, p) then
+        return true
+    end
+
+    return false
+end
 
 local ApplySkinTextures = nil
 
@@ -469,19 +469,6 @@ local TEAM_COLORS = {
 
 local DEFAULT_ESP_COLOR = Color3.new(1, 1, 1)
 
-local function getPlayerTeamColor(player)
-    local team = get_player_team(player)
-    if team and TEAM_COLORS[team] then
-        return TEAM_COLORS[team]
-    end
-    return DEFAULT_ESP_COLOR
-end
-
-getgenv().esplib_get_color = function(character)
-    local player = Players:GetPlayerFromCharacter(character)
-    if not player then return DEFAULT_ESP_COLOR end
-    return getPlayerTeamColor(player)
-end
 
 getgenv().esplib = {
     box = {
@@ -1591,7 +1578,6 @@ local function FindAllTargets()
     local lchar = Players.LocalPlayer.Character
     if not lchar or not lchar:FindFirstChild("Head") then return end
     local lHeadPos = lchar.Head.Position
-    local myTeam = get_player_team(LocalPlayer)
     local screenCenter = camera.ViewportSize / 2
 
     local sDist, sClose = math.huge, nil
@@ -1605,15 +1591,13 @@ local function FindAllTargets()
         if char:GetAttribute("Dead") then continue end
         if char:GetAttribute("Invincible") then continue end
 
-        local vTeam = get_player_team(v)
-        local isTeam = myTeam == vTeam
-
         local targetPart = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
         if not targetPart then continue end
-
         local screenPos, onScreen = camera:WorldToViewportPoint(targetPart.Position)
+		
+        local isTeam = IsEnemy(v)
 
-        if Toggles.Ragebot.Value and not isTeam then
+        if Toggles.Ragebot.Value and isTeam == false then
             local rPart = char:FindFirstChild(Options.RageHitPart.Value) or targetPart
             local alive = true
             if Toggles.RagebotVisibleCheck.Value and not onScreen then alive = false end
@@ -1623,13 +1607,12 @@ local function FindAllTargets()
                 if rd < rDist then rDist = rd; rClose = rPart end
             end
         end
-
-        if Toggles.SilentAim.Value and not isTeam and onScreen then
+        if Toggles.SilentAim.Value and onScreen then
             if not Toggles.SilentTeamCheck.Value or not isTeam then
-                local sd = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
+				local sd = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
                 if sd <= ((Toggles.SilentUseFovCircle.Value and SilentFovCircle.Radius) or 999999) then
                     if sd < sDist then 
-                        if not Toggles.SilentWallbang.Value then
+						if not Toggles.SilentWallbang.Value then
                             if not isVisible(targetPart) then
                                 continue
                             end
@@ -1675,7 +1658,7 @@ RunService.RenderStepped:Connect(function()
     for _, player in next, Players:GetPlayers() do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-            if Toggles.Hitbox.Value and get_player_team(player) ~= get_player_team(LocalPlayer) and hitboxsafe then
+            if Toggles.Hitbox.Value and not IsEnemy(player) and hitboxsafe then
                 hrp.Size = Vector3.new(Options.HitboxSize.Value, Options.HitboxSize.Value, Options.HitboxSize.Value)
                 hrp.Transparency = Options.HitboxTransparency.Value
             else
@@ -1771,9 +1754,9 @@ pcall(function()
             end)
         end
         if type(obj) == "table" and rawget(obj, "shoot") then
-            if obj.shoot and typeof(obj.shoot) == "function" and #debug.getupvalues(obj.shoot) == 25 then
+            if obj.shoot and typeof(obj.shoot) == "function" and #debug.getupvalues(obj.shoot) == 26 then
                 pcall(function()
-                    SendFunc = debug.getupvalue(obj.shoot, 13).Inventory.ShootWeapon.Send
+                    SendFunc = debug.getupvalue(obj.shoot, 14).Inventory.ShootWeapon.Send
                 end)
             end
         end
@@ -1875,12 +1858,10 @@ task.spawn(function()
                 if char:GetAttribute("Dead") then continue end
                 if char:GetAttribute("Invincible") then continue end
 
-                if get_player_team(LocalPlayer) == get_player_team(player) then
-                    continue
-                end
-
-                if Weapon and Weapon.IsEquipped and Weapon.Rounds > 0 then
-                    Weapon:shoot()
+                if IsEnemy(player) then
+                    if Weapon and Weapon.IsEquipped and Weapon.Rounds > 0 then
+                        Weapon:shoot()
+                    end
                 end
             end
         end 
