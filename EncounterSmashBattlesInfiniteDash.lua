@@ -23,11 +23,10 @@ utility.Init = function(self)
         return filtergc("function", {Name = 'AddEnergy'}, true)    
     end)
 
-    if not self.getenergygc then
+    if not self.GetEnergy then
         return warn("failed to get GetEnergy func err: "..tostring(self.GetEnergy))
     end
-
-    if not self.addenergygc then
+    if not self.AddEnergy then
         return warn("failed to get AddEnergy func err: "..tostring(self.AddEnergy))
     end
 
