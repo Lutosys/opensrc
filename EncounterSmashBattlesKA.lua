@@ -46,6 +46,7 @@ utility.Init = function(self)
     self.runconn = self.RunService.RenderStepped:Connect(function(a0: number)
         self.target = self:getclosetplayer()
     end)
+    self.Camera = self.Workspace.CurrentCamera
 
     while true do
         wait()
@@ -61,7 +62,7 @@ utility.Init = function(self)
             self.DamageRequest:FireServer(
                 b,
                 workspace:GetServerTimeNow(),
-                CFrame.lookAt(head.CFrame.Position, Vector3.new(10000000,-100000,0)),
+                CFrame.new(head.CFrame.Position, head.CFrame.Position + self.Camera.CFrame.LookVector),
                 self.target
             )
         end
