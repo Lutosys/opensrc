@@ -27,13 +27,11 @@ utility.getclosetplayer = function(self)
             continue
         end
 
-        mychar:MoveTo(Vector3.new(-0, 38, -2))
-
         local hrp = char:FindFirstChild("HumanoidRootPart")
         if not hrp then continue end    
 
         local dist = self.LocalPlayer:DistanceFromCharacter(hrp.Position)
-        if dist < closetdist then
+        if dist < 15 and dist < closetdist then
             closetdist = dist 
             closet = char
         end
