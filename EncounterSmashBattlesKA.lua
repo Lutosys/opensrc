@@ -1,3 +1,6 @@
+
+local Skill1 = game:GetService("ReplicatedStorage"):FindFirstChild("RE"):FindFirstChild("Champions"):FindFirstChild("Construct"):FindFirstChild("Skill1")
+
 local utility = {
     target = nil,
     RunService = cloneref(game:GetService("RunService")),
@@ -48,22 +51,56 @@ utility.Init = function(self)
     end)
     self.Camera = self.Workspace.CurrentCamera
 
+    self.RE = self.ReplicatedStorage:FindFirstChild("RE")
+    self.RF = self.ReplicatedStorage:FindFirstChild("RF")
+
+    self.Champions = self.RE:FindFirstChild("Champions")
+    self.ChangeChampion = self.RF:FindFirstChild("ChangeChampion")
+
+    self.ChangeChampion:InvokeServer(
+        "Construct"
+    )
+
+    warn("success")
+
     while true do
-        wait()
+        wait(0.01)
         if self.target then
             local head = self.target:FindFirstChild("Head")
             if not head then
                 continue
             end
 
+            self.MyChampion = self.Champions:FindFirstChild(self.LocalPlayer:GetAttribute("Champion"))
+            if not self.MyChampion or self.MyChampion.Name ~= "Construct" then
+                self.ChangeChampion:InvokeServer(
+                    "Construct"
+                )
+                continue
+            end
+            self.Skill1 = self.MyChampion:FindFirstChild("Skill1")
+            if not self.Skill1 then
+                continue
+            end
+            
+            --[[
             local b = buffer.create(2)
-            buffer.writeu16(b, 0, math.random(105, 115))
+            buffer.writeu16(b, 0, 82)
 
             self.DamageRequest:FireServer(
                 b,
                 workspace:GetServerTimeNow(),
                 CFrame.new(head.CFrame.Position, head.CFrame.Position + self.Camera.CFrame.LookVector),
                 self.target
+            )
+
+            --]]
+
+            Skill1:FireServer(
+                self.target,
+                CFrame.new(head.CFrame.Position, head.CFrame.Position + self.Camera.CFrame.LookVector),
+                0.99,
+                workspace:GetServerTimeNow()
             )
         end
     end
