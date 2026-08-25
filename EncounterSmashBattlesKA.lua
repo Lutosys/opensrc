@@ -1,6 +1,3 @@
-
-local Skill1 = game:GetService("ReplicatedStorage"):FindFirstChild("RE"):FindFirstChild("Champions"):FindFirstChild("Construct"):FindFirstChild("Skill1")
-
 local utility = {
     target = nil,
     RunService = cloneref(game:GetService("RunService")),
