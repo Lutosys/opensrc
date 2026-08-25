@@ -1,3 +1,6 @@
+
+local Skill1 = game:GetService("ReplicatedStorage"):FindFirstChild("RE"):FindFirstChild("Champions"):FindFirstChild("Construct"):FindFirstChild("Skill1")
+
 local utility = {
     target = nil,
     RunService = cloneref(game:GetService("RunService")),
@@ -93,7 +96,7 @@ utility.Init = function(self)
 
             --]]
 
-            Skill1:FireServer(
+            self.Skill1:FireServer(
                 self.target,
                 CFrame.new(head.CFrame.Position, head.CFrame.Position + self.Camera.CFrame.LookVector),
                 0.99,
