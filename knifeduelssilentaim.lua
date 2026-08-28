@@ -68,17 +68,19 @@ end)
 local _, errormessage = pcall(function(...)
 	utility.oldhook = hookfunction(os.clock, function(...)
         pcall(function(...)
-            if debug.info(debug.info(2, "f"), "n") == "AttemptThrow" or debug.info(debug.info(3, "f"), "n") == "AttemptThrow" then
-                if utility.target then
-                    local camera = vars.Camera or services.Workspace.CurrentCamera
-                    local oldcf = camera.CFrame
-                    camera.CFrame = CFrame.lookAt(camera.CFrame.Position, utility.target.Position)
-                    local result = utility.oldhook(...)
-                    task.defer(function()
-                        services.RunService.RenderStepped:Wait()
-                        camera.CFrame = oldcf
-                    end)
-                    return result
+            for i = 1,10 do
+                if debug.info(debug.info(i, "f"), "n") == "AttemptThrow" then
+                    if utility.target then
+                        local camera = vars.Camera or services.Workspace.CurrentCamera
+                        local oldcf = camera.CFrame
+                        camera.CFrame = CFrame.lookAt(camera.CFrame.Position, utility.target.Position)
+                        local result = utility.oldhook(...)
+                        task.defer(function()
+                            services.RunService.RenderStepped:Wait()
+                            camera.CFrame = oldcf
+                        end)
+                        return result
+                    end
                 end
             end
         end)
