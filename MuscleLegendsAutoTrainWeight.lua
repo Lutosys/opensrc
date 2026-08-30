@@ -5,9 +5,18 @@ local utility = {
 
 function utility:SafeWait()
     pcall(function()
-        self.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
-        self.LocalPlayer.Character:WaitForChild("Head")
-        self.LocalPlayer.Character:WaitForChild("Humanoid")
+        repeat 
+            task.wait()
+        until self.LocalPlayer.Character ~= nil
+        repeat 
+            task.wait()
+        until self.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") ~= nil
+        repeat 
+            task.wait()
+        until self.LocalPlayer.Character:FindFirstChild("Head") ~= nil
+        repeat 
+            task.wait()
+        until self.LocalPlayer.Character:FindFirstChild("Humanoid") ~= nil
     end)
 end
 
