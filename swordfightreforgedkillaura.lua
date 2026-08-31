@@ -12,7 +12,7 @@ function utility:getsword()
             return {s = s, h = h}
         end
 
-        return nil
+        return {}
     end)
     if success and r.s and r.h then
         return r
@@ -26,6 +26,9 @@ function utility:getcloset()
 
     for _, plr in next, self.Players:GetPlayers() do
         if plr == self.LocalPlayer then
+            continue
+        end
+        if plr.Name == "MiniMAAC" then
             continue
         end
         local char = plr.Character
@@ -77,13 +80,15 @@ function utility:initkillaura()
 
     task.spawn(function()
         while task.wait() do 
-            self.target = self:getcloset()
-            if self.target then
-                local data = self:getsword()
-                if data.s and data.h then 
-                    self.attack(data.h, self.target)
+            pcall(function(...)
+                self.target = self:getcloset()
+                if self.target then
+                    local data = self:getsword()
+                    if data.s and data.h then 
+                        self.attack(data.h, self.target)
+                    end
                 end
-            end
+            end)
         end
     end)
 
