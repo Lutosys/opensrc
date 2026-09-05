@@ -54,7 +54,7 @@ function utility:GoTo(pos)
             local dt = task.wait(0.01)
             local start = self.LocalPlayer.Character.HumanoidRootPart.Position
             dist = (pos.BoundsCFrame.Position - start).Magnitude
-            local half = start + (pos.BoundsCFrame.Position - start).Unit * dt * 350
+            local half = start + (pos.BoundsCFrame.Position - start).Unit * dt * 430
             self.LocalPlayer.Character:MoveTo(half)
         until dist <= 5
     end)
