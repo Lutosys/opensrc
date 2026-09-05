@@ -104,6 +104,8 @@ function utility:init()
             pcall(function(...)
                 local egg = self:getBestEgg()
                 if egg then
+                    self:GoTo({["BoundsCFrame"] = CFrame.new(514, 71, -368)})
+                    task.wait(0.1)
                     self:GoTo(egg)
                     task.wait(0.5)
                     local p = self:getproximitypromptforegg(egg)
@@ -112,8 +114,10 @@ function utility:init()
                     end
                     task.wait(0.1)
                     self:GoTo({["BoundsCFrame"] = CFrame.new(514, 71, -368)})
+                    task.wait(0.1)
                 else
                     self:GoTo({["BoundsCFrame"] = CFrame.new(514, 71, -368)})
+                    task.wait(0.1)
                 end
             end)
             task.wait(1)
