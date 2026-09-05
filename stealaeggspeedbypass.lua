@@ -71,7 +71,7 @@ function utility:initbypass()
         self.LocalPlayer:Kick("UNSUPPORT EXECUTOR MISSING islclosure")
     end
 
-    local func3 = self:findfunction(19, 3)
+    local func3 = self:findfunction(19, 605)
 
     if not func3 then
         return warn("failed to get function 3")
