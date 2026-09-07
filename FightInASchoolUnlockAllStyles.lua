@@ -110,21 +110,19 @@ utility.ReturnUpdateInfoFunction = function()
 end
 
 function utility:InvokeServer()
-    pcall(function(...)
-        local r = self.RemoteFunction:InvokeServer("GetData")
-        
-        for k, s in next, self.StylesFolder:GetChildren() do
-             r.Inventory.Unlocked_Styles[tostring(s)] = true
-        end
+    local r = self.RemoteFunction:InvokeServer("GetData")
+    
+    for k, s in next, self.StylesFolder:GetChildren() do
+        r.Inventory.Unlocked_Styles[tostring(s)] = true
+    end
 
-        return r
-    end)
+    return r
 end
 
 function utility:Init()
     self.StarterGui:SetCore("SendNotification", {
         Title = "Info",
-        Text = "A success notification will show up once it is done hooking, check bottom right if nothing shows up check console otherwise join discord. May take 10 seconds to show up"
+        Text = "A success notification will show up once it is done hooking, check bottom right if nothing shows up check console otherwise join discord."
     })
 
     self.LocalPlayer = self.Players.LocalPlayer
