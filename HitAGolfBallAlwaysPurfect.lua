@@ -1,5 +1,6 @@
 local utility = {
-    ReplicatedStorage = game:GetService("ReplicatedStorage")
+    ReplicatedStorage = game:GetService("ReplicatedStorage"),
+    Players = game:GetService("Players")
 }
 
 function utility:GetRemote()
@@ -25,6 +26,15 @@ utility.hookmethod = function(obj, metamethod, callback)
 end
 
 function utility:init()
+    self.LocalPlayer = self.Players.LocalPlayer
+    if not self.LocalPlayer then
+        return warn("failed to get localplayer")
+    end
+
+    if not hookmetamethod then
+        return self.LocalPlayer:Kick("unsupported mnssing hookmetamethod")
+    end
+
     self.Swing = self:GetRemote()
     if not self.Swing then
         return
