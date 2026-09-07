@@ -118,7 +118,7 @@ end
 local function CacheInit()
     for key, obj in next, game:GetDescendants() do
         if ValidObject(obj) then
-            local cleaned = string.gsub(game.ReplicatedStorage.RemoteEvent:GetDebugId(), "1_", "")
+            local cleaned = string.gsub(obj:GetDebugId(), "1_", "")
             if cleaned and tonumber(cleaned) ~= nil then
                 data[tonumber(cleaned)] = obj
                 createbutton(obj.Name)
