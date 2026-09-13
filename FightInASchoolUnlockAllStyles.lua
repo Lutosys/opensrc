@@ -92,7 +92,7 @@ utility.ReturnUpdateInfoFunction = function()
         for _, data in pairs(temp) do
             local u = debug.getupvalue(data, 1)
             if u and typeof(u) == "table" then
-                if u.Inventory and u.Inventory.Unlocked_Styles and debug.info(data, "l") == 5814 then
+                if u.Inventory and u.Inventory.Unlocked_Styles and debug.info(data, "l") == 5823 then
                     temp = data
                     break
                 end
@@ -255,6 +255,7 @@ function utility:Init()
     self.UpdateInfo = self.ReturnUpdateInfoFunction()
     while not self.UpdateInfo or typeof(self.UpdateInfo) ~= "function" do 
         task.wait(0.1)
+        warn("didnt get updateinfo retrying in 0.1 second")
         self.UpdateInfo = self.ReturnUpdateInfoFunction()
     end
 
