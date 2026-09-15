@@ -20,6 +20,7 @@ utility.areas = {
     'Cosmic', -- 8
     "Cherry Blossom", -- 9
     "Titan Temple", -- 10
+    "Light Dark", -- 11
 }
 
 getgenv().config = {
@@ -29,18 +30,21 @@ getgenv().config = {
 function utility:getBestEgg()
     local s, r = pcall(function(...)
         local egg = nil
-        local biggestegg = 0
+        local bestarea = 0
+
         for key, data in next, self.EggState.ReadFieldEggs().Records do
             local idx = table.find(self.areas, data.AreaId)
-            if idx > getgenv().config.minarea then
-                if data.AssetScale > biggestegg then
-                    biggestegg = data.AssetScale
+            if idx and idx >= getgenv().config.minarea then
+                if idx > bestarea then
+                    bestarea = idx
                     egg = data
                 end
             end
         end
+
         return egg
     end)
+
     if s and r then
         return r    
     end
@@ -75,6 +79,7 @@ function utility:getproximitypromptforegg(egg)
                 end
             end
         end
+
         return closetprompt
     end)
     if s and r then
@@ -112,7 +117,10 @@ function utility:init()
                     if p then
                         fireproximityprompt(self:getproximitypromptforegg(egg))
                     end
-                    task.wait(0.1)
+                    task.wait(5)
+                    if p then
+                        fireproximityprompt(self:getproximitypromptforegg(egg))
+                    end
                     self:GoTo({["BoundsCFrame"] = CFrame.new(514, 71, -368)})
                     task.wait(0.1)
                 else
