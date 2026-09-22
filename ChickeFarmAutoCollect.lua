@@ -2,18 +2,6 @@ local utility = {
 	Workspace = game:GetService("Workspace"),
 	ReplicatedStorage = game:GetService("ReplicatedStorage"),
 }
-
-local Eggs = workspace.Eggs
-
-local function CollectEgg(egg)
-    local Event = game:GetService("ReplicatedStorage"):FindFirstChild("Paper"):FindFirstChild("Remotes"):FindFirstChild("__remoteevent")
-    Event:FireServer(
-        "Collect Egg",
-        egg.Name
-    )
-    egg:Destroy()
-end
-
 function utility:CollectEgg(e)
 	local s,r = pcall(function(...)
 		self.Event:FireServer(
