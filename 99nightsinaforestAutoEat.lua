@@ -46,7 +46,7 @@ function utility:GetClosetFood()
             end
 
             local dist = self.LocalPlayer:DistanceFromCharacter(h.Position)
-            if dist and dist < cd then
+            if dist and dist < cd and dist < 30 then
                 cd = dist
                 c = food
             end
