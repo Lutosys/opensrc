@@ -23,22 +23,15 @@ utility.safehook = function(f, c)
     return warn("failed to hook function: "..tostring(r))
 end
 
-function utility:findfunction(nups, linedefined)
+function utility:findfunction(nups, num)
     local s, r = pcall(function(...)
         for _, f in next, self.collectgarbage() do
             if typeof(f) == 'function' and islclosure(f) then
                 local upvs = debug.getupvalues(f)
+                local consts = debug.getconstants(f)
                 local line = debug.info(f, "l")
-
-                if upvs and #upvs == nups and line == linedefined then
-                    if nups == 10 then
-                        local t = debug.getupvalue(f, 3)
-                        if typeof(t) == "table" and rawget(t, "Humanoid") then
-                            return f
-                        end
-                    else
-                        return f
-                    end
+                if upvs and #upvs == nups and consts and #consts == num then
+                    return f
                 end
             end
         end
@@ -71,8 +64,7 @@ function utility:initbypass()
         self.LocalPlayer:Kick("UNSUPPORT EXECUTOR MISSING islclosure")
     end
 
-    local func3 = self:findfunction(19, 3)
-
+    local func3 = self:findfunction(19, 15)
     if not func3 then
         return warn("failed to get function 3")
     end
